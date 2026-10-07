@@ -1,0 +1,17 @@
+/* Light theme */
+.root {
+    -fx-background-color: #f7f8fa;
+    -fx-font-size: 14px;
+}
+.label {
+    -fx-text-fill: #1e1f22;
+}
+.title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+.button {
+    -fx-background-color: #3574f0;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}

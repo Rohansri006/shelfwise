@@ -1,0 +1,14 @@
+# Build output
+target/
+out/
+
+# IntelliJ
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Local user data and caches (never commit personal library files)
+data/
+cache/

@@ -1,0 +1,17 @@
+/* Dark (default) theme */
+.root {
+    -fx-background-color: #1e1f22;
+    -fx-font-size: 14px;
+}
+.label {
+    -fx-text-fill: #e6e6e6;
+}
+.title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+.button {
+    -fx-background-color: #3574f0;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}
