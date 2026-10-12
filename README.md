@@ -1,6 +1,6 @@
 # ShelfWise
 
-Private library and collection management system. Java OOP project (MUJ).
+Private library and collection management system.
 
 ## Requirements
 - JDK 21 (Eclipse Temurin)
