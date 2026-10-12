@@ -17,6 +17,13 @@
     <properties>
         <!-- desktop is never reused on Android, so it can use Java 21 -->
         <maven.compiler.release>21</maven.compiler.release>
+        <!-- Which class javafx:run launches. Declared as a property so a
+             different one can be run without editing this file, e.g.
+               mvn -f desktop/pom.xml javafx:run -Dapp.mainClass=<other class>
+             A -D on the command line overrides this value. Setting the
+             plugin's <mainClass> directly would NOT be overridable, because
+             an explicit plugin configuration beats a command-line property. -->
+        <app.mainClass>com.shelfwise.desktop.ShelfWiseApp</app.mainClass>
     </properties>
 
     <dependencies>
@@ -82,7 +89,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.shelfwise.desktop.ShelfWiseApp</mainClass>
+                    <mainClass>${app.mainClass}</mainClass>
                 </configuration>
             </plugin>
         </plugins>
