@@ -14,8 +14,11 @@ import com.google.zxing.common.HybridBinarizer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.image.ImageView;
@@ -103,6 +106,10 @@ public class ScanPrototypeApp extends Application {
     /** Status line: what the prototype is currently doing. */
     private final Label statusLabel = new Label("Starting camera on a background thread...");
 
+    /** Lets the user flip the preview horizontally. See the comment in start(). */
+    private final CheckBox mirrorToggle =
+            new CheckBox("Mirror preview (natural movement, digits reversed)");
+
     /** Every distinct barcode seen so far, newest last. */
     private final ListView<String> scanList = new ListView<>();
 
@@ -119,22 +126,37 @@ public class ScanPrototypeApp extends Application {
         preview.setFitWidth(640);
         preview.setPreserveRatio(true);
 
-        // macOS mirrors the front-facing camera by default, the way Photo Booth
-        // does, which shows barcode digits reversed. Negating the horizontal
-        // scale flips the displayed node back.
-        //
-        // This affects the DISPLAY ONLY: the BufferedImage handed to ZXing is
-        // the untouched camera frame, so decoding is unchanged. Note the
-        // trade-off - with the mirror removed, moving a book to your right now
-        // moves it left on screen.
-        preview.setScaleX(-1);
-
         scanList.setPrefHeight(140);
+
+        // Mirroring is a genuine trade-off, so it is the user's choice rather
+        // than a hardcoded decision:
+        //
+        //   mirrored  - moving the book right moves it right on screen, which
+        //               is how a mirror behaves and makes aiming intuitive,
+        //               but the printed digits read backwards
+        //   unmirrored- digits are readable, but the book appears to move the
+        //               opposite way to your hand
+        //
+        // Default is mirrored, because aiming is the thing you actually do with
+        // the preview; the decoded number is printed below it, so there is
+        // never a need to read digits off the image.
+        //
+        // Either way this is DISPLAY ONLY - the BufferedImage handed to ZXing
+        // is always the untouched camera frame, so decoding is unaffected.
+        mirrorToggle.setSelected(true);
+        applyMirror();
+        mirrorToggle.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                applyMirror();
+            }
+        });
 
         VBox root = new VBox(12);
         root.setPadding(new Insets(16));
         root.getChildren().add(new Label("Barcode scan prototype"));
         root.getChildren().add(preview);
+        root.getChildren().add(mirrorToggle);
         root.getChildren().add(statusLabel);
         root.getChildren().add(new Label("Scanned codes:"));
         root.getChildren().add(scanList);
@@ -149,6 +171,21 @@ public class ScanPrototypeApp extends Application {
         Thread cameraThread = new Thread(new CameraWorker(), "camera-worker");
         cameraThread.setDaemon(true);
         cameraThread.start();
+    }
+
+    /**
+     * Applies the mirror setting to the preview.
+     * <p>
+     * A negative horizontal scale flips a JavaFX node left-to-right. Only the
+     * on-screen node is affected; the camera frames themselves are never
+     * altered, so barcode decoding behaves identically either way.
+     */
+    private void applyMirror() {
+        if (mirrorToggle.isSelected()) {
+            preview.setScaleX(-1);
+        } else {
+            preview.setScaleX(1);
+        }
     }
 
     /** Opens the trace file named by -Dscan.log, if one was given. */
