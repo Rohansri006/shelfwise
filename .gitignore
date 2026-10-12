@@ -1,14 +1,59 @@
-# Build output
+# ===== Build output =====
 target/
 out/
+bin/
+build/
+*.class
+*.jar
+*.war
+*.ear
 
-# IntelliJ
+# ===== Maven =====
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== IntelliJ IDEA =====
 .idea/
 *.iml
+*.iws
+*.ipr
 
-# macOS
+# ===== VS Code / Eclipse (created by Java extensions) =====
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+
+# ===== Claude Code (local settings only; CLAUDE.md is committed) =====
+.claude/settings.local.json
+
+# ===== macOS =====
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
 
-# Local user data and caches (never commit personal library files)
+# ===== Logs and temp files =====
+*.log
+hs_err_pid*
+replay_pid*
+*.tmp
+*.swp
+*~
+
+# ===== Environment and secrets =====
+.env
+.env.*
+*.pem
+*.key
+
+# ===== ShelfWise local data (never commit personal library files) =====
 data/
 cache/
+backups/
