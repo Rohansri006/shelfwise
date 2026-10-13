@@ -63,3 +63,7 @@ replay_pid*
 data/
 cache/
 backups/
+
+
+# ===== local history=====
+.history/
