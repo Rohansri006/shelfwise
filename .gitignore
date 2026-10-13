@@ -30,8 +30,14 @@ dependency-reduced-pom.xml
 .settings/
 .factorypath
 
-# ===== Claude Code (local settings only; CLAUDE.md is committed) =====
+# ===== Claude Code =====
 .claude/settings.local.json
+# CLAUDE.md is Claude Code's project briefing. Deliberately NOT committed:
+# this repo is public, and the file holds working notes and project state
+# that do not need publishing. Claude Code reads it from the working
+# directory, so it still works untracked - but keep a personal backup,
+# because a fresh clone will not have it.
+CLAUDE.md
 
 # ===== macOS =====
 .DS_Store
