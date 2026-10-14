@@ -11,6 +11,8 @@ import com.shelfwise.core.model.Contributor;
 import com.shelfwise.core.model.Copy;
 import com.shelfwise.core.model.Location;
 import com.shelfwise.core.model.ReadingStatus;
+import com.shelfwise.core.model.Series;
+import com.shelfwise.core.model.Wishlist;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -589,5 +591,66 @@ class CollectionManagerTest {
                 m.moveLocation(shelf, row);
             }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Series and wishlists
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("series names are unique across the collection, ignoring case")
+    void duplicateSeriesNameRefused() {
+        final CollectionManager m = new CollectionManager();
+        Series discworld = new Series("Discworld", 41);
+        m.addSeries(discworld);
+        assertSame(discworld, m.findSeriesById(discworld.getId()));
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.addSeries(new Series("DISCWORLD"));
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("deleting a series keeps its books and takes them out of the series")
+    void deleteSeriesReleasesBooks() throws DuplicateItemException {
+        // The Java mirror of ON DELETE SET NULL: losing the series must not
+        // lose the books.
+        CollectionManager m = new CollectionManager();
+        Series discworld = new Series("Discworld", 41);
+        m.addSeries(discworld);
+        Book guards = m.addItem("Guards! Guards!");
+        guards.setSeriesId(discworld.getId());
+        guards.setSeriesPosition(8);
+        Book other = m.addItem("Dune");
+
+        assertEquals(1, m.deleteSeries(discworld));
+
+        assertNull(guards.getSeriesId());
+        assertEquals(0, guards.getSeriesPosition());
+        assertEquals(2, m.getItems().size());
+        assertNull(other.getSeriesId());
+        assertTrue(m.getSeries().isEmpty());
+    }
+
+    @Test
+    @DisplayName("wishlist names are unique, and removing one removes its entries with it")
+    void wishlists() {
+        final CollectionManager m = new CollectionManager();
+        Wishlist birthday = new Wishlist("Birthday ideas");
+        m.addWishlist(birthday);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.addWishlist(new Wishlist("birthday IDEAS"));
+            }
+        });
+
+        assertTrue(m.removeWishlist(birthday));
+        assertTrue(m.getWishlists().isEmpty());
+        assertTrue(m.toCollectionData().getWishlists().isEmpty());
     }
 }

@@ -17,6 +17,7 @@ import com.shelfwise.core.model.Wishlist;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -641,6 +642,126 @@ public class CollectionManager implements Searchable {
         for (int i = 0; i < subtree.size(); i++) {
             locationsById.put(subtree.get(i).getId(), subtree.get(i));
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Series
+    // ------------------------------------------------------------------
+
+    /**
+     * Adds a series. Names are unique across the collection, ignoring case,
+     * matching the database's {@code UNIQUE} constraint.
+     *
+     * @param series the series
+     * @throws IllegalArgumentException if null, already added, or the name
+     *                                  is taken
+     */
+    public void addSeries(Series series) {
+        if (series == null) {
+            throw new IllegalArgumentException("Series must not be null.");
+        }
+        if (seriesById.containsKey(series.getId())) {
+            throw new IllegalArgumentException(
+                    "\"" + series.getName() + "\" has already been added.");
+        }
+        List<Series> all = getSeries();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).getName().equalsIgnoreCase(series.getName())) {
+                throw new IllegalArgumentException(
+                        "A series called \"" + all.get(i).getName() + "\" already exists.");
+            }
+        }
+        seriesById.put(series.getId(), series);
+    }
+
+    /** @return a new list of every series, in no particular order */
+    public List<Series> getSeries() {
+        return new ArrayList<>(seriesById.values());
+    }
+
+    /**
+     * @param id the series' id
+     * @return the series, or null if there is none
+     */
+    public Series findSeriesById(String id) {
+        if (id == null) {
+            return null;
+        }
+        return seriesById.get(id);
+    }
+
+    /**
+     * Deletes a series. Its books stay in the collection, simply no longer
+     * in a series - the Java side of the database's
+     * {@code ON DELETE SET NULL}. Clearing a book's series id also clears
+     * its position (see {@link Book#setSeriesId}).
+     *
+     * @param series an existing series
+     * @return how many books were taken out of it
+     * @throws IllegalArgumentException if the series is not known
+     */
+    public int deleteSeries(Series series) {
+        if (series == null || !seriesById.containsKey(series.getId())) {
+            throw new IllegalArgumentException("That series is not in this collection.");
+        }
+        int released = 0;
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i) instanceof Book) {
+                Book book = (Book) all.get(i);
+                if (series.getId().equals(book.getSeriesId())) {
+                    book.setSeriesId(null);
+                    released++;
+                }
+            }
+        }
+        seriesById.remove(series.getId());
+        return released;
+    }
+
+    // ------------------------------------------------------------------
+    // Wishlists
+    // ------------------------------------------------------------------
+
+    /**
+     * Adds a wishlist. Names are unique, ignoring case, matching the
+     * database's {@code UNIQUE} constraint.
+     *
+     * @param wishlist the wishlist
+     * @throws IllegalArgumentException if null, already added, or the name
+     *                                  is taken
+     */
+    public void addWishlist(Wishlist wishlist) {
+        if (wishlist == null) {
+            throw new IllegalArgumentException("Wishlist must not be null.");
+        }
+        if (wishlists.contains(wishlist)) {
+            throw new IllegalArgumentException(
+                    "\"" + wishlist.getName() + "\" has already been added.");
+        }
+        for (int i = 0; i < wishlists.size(); i++) {
+            if (wishlists.get(i).getName().equalsIgnoreCase(wishlist.getName())) {
+                throw new IllegalArgumentException(
+                        "A wishlist called \"" + wishlists.get(i).getName() + "\" already exists.");
+            }
+        }
+        wishlists.add(wishlist);
+    }
+
+    /** @return an unmodifiable view of the wishlists, in the order added */
+    public List<Wishlist> getWishlists() {
+        return Collections.unmodifiableList(wishlists);
+    }
+
+    /**
+     * Removes a wishlist, and with it all its entries - they are part of
+     * the list (composition), so they have nowhere else to go.
+     *
+     * @param wishlist the wishlist
+     * @return true if it was present and removed
+     */
+    public boolean removeWishlist(Wishlist wishlist) {
+        return wishlists.remove(wishlist);
     }
 
     // ------------------------------------------------------------------
