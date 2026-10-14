@@ -1,7 +1,9 @@
 package com.shelfwise.core.service;
 
+import com.shelfwise.core.exception.CategoryNotEmptyException;
 import com.shelfwise.core.exception.DuplicateItemException;
 import com.shelfwise.core.exception.InvalidISBNException;
+import com.shelfwise.core.exception.LocationNotEmptyException;
 import com.shelfwise.core.model.Book;
 import com.shelfwise.core.model.Category;
 import com.shelfwise.core.model.CollectionItem;
@@ -371,5 +373,221 @@ class CollectionManagerTest {
         m.addItem("Dune");
         Searchable searchable = m;
         assertEquals(1, searchable.search("dune").size());
+    }
+
+    // ------------------------------------------------------------------
+    // Categories
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("adding a category registers its whole subtree")
+    void addCategoryIndexesSubtree() {
+        CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        m.addCategory(fiction);
+        Category scifi = new Category("Science fiction");
+        m.addCategory(scifi, fiction);
+
+        assertSame(scifi, m.findCategoryById(scifi.getId()));
+        assertEquals(fiction.getId(), scifi.getParentId());
+        assertEquals(1, m.getRootCategories().size());
+    }
+
+    @Test
+    @DisplayName("two top-level categories cannot share a name")
+    void duplicateRootCategoryRefused() {
+        // The tree class cannot see this: a root has no parent to check its
+        // siblings. The database had the same gap with NULL parent ids.
+        final CollectionManager m = new CollectionManager();
+        m.addCategory(new Category("Fiction"));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        m.addCategory(new Category("fiction"));
+                    }
+                });
+        assertTrue(e.getMessage().contains("already exists"), e.getMessage());
+    }
+
+    @Test
+    @DisplayName("the same category name is allowed under different parents")
+    void sameNameUnderDifferentParents() {
+        CollectionManager m = new CollectionManager();
+        Category nonFiction = new Category("Non-fiction");
+        Category reference = new Category("Reference");
+        m.addCategory(nonFiction);
+        m.addCategory(reference);
+
+        m.addCategory(new Category("Finance"), nonFiction);
+        m.addCategory(new Category("Finance"), reference);
+
+        assertEquals(4, m.toCollectionData().getCategories().size());
+    }
+
+    @Test
+    @DisplayName("moving a category to the top level checks top-level names")
+    void moveCategoryToRoot() {
+        final CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        m.addCategory(fiction);
+        final Category nested = new Category("Fiction");
+        Category other = new Category("Other");
+        m.addCategory(other);
+        m.addCategory(nested, other);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.moveCategory(nested, null);
+            }
+        });
+
+        Category poetry = new Category("Poetry");
+        m.addCategory(poetry, other);
+        m.moveCategory(poetry, null);
+        assertTrue(poetry.isRoot());
+        // Only the nested "Fiction" is left under "Other".
+        assertEquals(1, other.getChildren().size());
+    }
+
+    @Test
+    @DisplayName("deleting a category with a book anywhere beneath it is refused, naming the count")
+    void deleteNonEmptyCategoryRefused() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        final Category fiction = new Category("Fiction");
+        Category scifi = new Category("Science fiction");
+        m.addCategory(fiction);
+        m.addCategory(scifi, fiction);
+        Book dune = m.addItem("Dune");
+        dune.addCategoryId(scifi.getId());
+        // A trashed book still counts: it is still stored.
+        Book trashed = m.addItem("Neuromancer");
+        trashed.addCategoryId(scifi.getId());
+        m.moveToTrash(trashed.getId());
+
+        CategoryNotEmptyException e = assertThrows(CategoryNotEmptyException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.deleteCategory(fiction);
+                    }
+                });
+        assertEquals(2, e.getBookCount());
+        assertSame(fiction, m.findCategoryById(fiction.getId()));
+    }
+
+    @Test
+    @DisplayName("deleting an empty category removes its whole subtree")
+    void deleteEmptyCategory() throws CategoryNotEmptyException {
+        CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        Category scifi = new Category("Science fiction");
+        m.addCategory(fiction);
+        m.addCategory(scifi, fiction);
+
+        m.deleteCategory(fiction);
+
+        assertNull(m.findCategoryById(fiction.getId()));
+        assertNull(m.findCategoryById(scifi.getId()));
+        assertTrue(m.getRootCategories().isEmpty());
+    }
+
+    @Test
+    @DisplayName("a category not added to the manager is refused")
+    void unknownCategoryRefused() {
+        final CollectionManager m = new CollectionManager();
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.addCategory(new Category("Orphan"), new Category("Unknown parent"));
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Locations
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a shelf added with its rows registers every row")
+    void addLocationIndexesRows() {
+        CollectionManager m = new CollectionManager();
+        Location shelf = Location.createShelfWithRows("Study shelf", 3);
+        m.addLocation(shelf);
+
+        Location row = shelf.getChildren().get(2);
+        assertSame(row, m.findLocationById(row.getId()));
+        assertEquals(4, m.toCollectionData().getLocations().size());
+    }
+
+    @Test
+    @DisplayName("two top-level locations cannot share a name")
+    void duplicateRootLocationRefused() {
+        final CollectionManager m = new CollectionManager();
+        m.addLocation(new Location("Study shelf"));
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.addLocation(new Location("Study Shelf"));
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("deleting a location holding copies is refused, counting copies not books")
+    void deleteNonEmptyLocationRefused() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        final Location shelf = Location.createShelfWithRows("Study shelf", 2);
+        m.addLocation(shelf);
+        Location row1 = shelf.getChildren().get(0);
+        Location row2 = shelf.getChildren().get(1);
+
+        // One book, two copies, on two different rows of the same shelf.
+        Book dune = m.addItem("Dune");
+        dune.getCopies().get(0).setLocationId(row1.getId());
+        Copy second = new Copy();
+        second.setLocationId(row2.getId());
+        dune.addCopy(second);
+
+        LocationNotEmptyException e = assertThrows(LocationNotEmptyException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.deleteLocation(shelf);
+                    }
+                });
+        assertEquals(2, e.getCopyCount());
+    }
+
+    @Test
+    @DisplayName("deleting an empty location removes it and everything inside")
+    void deleteEmptyLocation() throws LocationNotEmptyException {
+        CollectionManager m = new CollectionManager();
+        Location shelf = Location.createShelfWithRows("Study shelf", 2);
+        m.addLocation(shelf);
+        Location row = shelf.getChildren().get(0);
+
+        m.deleteLocation(shelf);
+
+        assertNull(m.findLocationById(shelf.getId()));
+        assertNull(m.findLocationById(row.getId()));
+    }
+
+    @Test
+    @DisplayName("moving a shelf inside one of its own rows is refused")
+    void moveLocationCycleRefused() {
+        final CollectionManager m = new CollectionManager();
+        final Location shelf = Location.createShelfWithRows("Study shelf", 1);
+        m.addLocation(shelf);
+        final Location row = shelf.getChildren().get(0);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.moveLocation(shelf, row);
+            }
+        });
     }
 }

@@ -1,7 +1,9 @@
 package com.shelfwise.core.service;
 
+import com.shelfwise.core.exception.CategoryNotEmptyException;
 import com.shelfwise.core.exception.DuplicateItemException;
 import com.shelfwise.core.exception.InvalidISBNException;
+import com.shelfwise.core.exception.LocationNotEmptyException;
 import com.shelfwise.core.model.Book;
 import com.shelfwise.core.model.Category;
 import com.shelfwise.core.model.CollectionItem;
@@ -283,6 +285,362 @@ public class CollectionManager implements Searchable {
             itemsById.remove(trash.get(i).getId());
         }
         return trash.size();
+    }
+
+    // ------------------------------------------------------------------
+    // Categories
+    //
+    // The tree class already refuses duplicate sibling names and cycles
+    // inside addChild. What it cannot refuse is two *top-level* categories
+    // with the same name, because a root has no parent to check its
+    // siblings. That is the same gap the database had - UNIQUE
+    // (parent_id, name) ignores rows whose parent_id is NULL - and it is
+    // closed here the same way, by checking roots separately.
+    //
+    // The location methods below repeat this pattern for Location. The two
+    // tree classes deliberately share no base class (see CLAUDE.md §10), so
+    // the manager has one set of methods for each.
+    // ------------------------------------------------------------------
+
+    /**
+     * Adds a top-level category, together with any sub-categories already
+     * attached beneath it.
+     *
+     * @param category the category; must be top-level
+     * @throws IllegalArgumentException if null, already added, not
+     *                                  top-level, or another top-level
+     *                                  category has the same name
+     */
+    public void addCategory(Category category) {
+        requireNewCategory(category);
+        if (!category.isRoot()) {
+            throw new IllegalArgumentException(
+                    "\"" + category.getName() + "\" has a parent; add it under that parent instead.");
+        }
+        requireUniqueRootCategoryName(category.getName(), category);
+        indexCategorySubtree(category);
+    }
+
+    /**
+     * Adds a category beneath an existing one.
+     *
+     * @param category the new category
+     * @param parent   an existing category to put it under
+     * @throws IllegalArgumentException if either is invalid, or the parent
+     *                                  already has a child of that name
+     */
+    public void addCategory(Category category, Category parent) {
+        requireNewCategory(category);
+        requireKnownCategory(parent);
+        parent.addChild(category);
+        indexCategorySubtree(category);
+    }
+
+    /**
+     * Moves a category, with everything beneath it, to a new parent.
+     *
+     * @param category  an existing category
+     * @param newParent the new parent, or null to make it top-level
+     * @throws IllegalArgumentException if the move would put it inside
+     *                                  itself or clash with a name already
+     *                                  there
+     */
+    public void moveCategory(Category category, Category newParent) {
+        requireKnownCategory(category);
+        if (newParent == null) {
+            if (category.isRoot()) {
+                return;
+            }
+            requireUniqueRootCategoryName(category.getName(), category);
+            category.getParent().removeChild(category);
+        } else {
+            requireKnownCategory(newParent);
+            newParent.addChild(category);
+        }
+    }
+
+    /**
+     * Deletes a category and every sub-category beneath it.
+     * <p>
+     * Refused while any item is filed anywhere in that subtree - the same
+     * rule the database enforces with {@code ON DELETE RESTRICT}. Items in
+     * the trash count too, because they are still stored and the database
+     * would refuse the delete because of them.
+     *
+     * @param category an existing category
+     * @throws CategoryNotEmptyException if items are filed under it
+     * @throws IllegalArgumentException  if the category is not known
+     */
+    public void deleteCategory(Category category) throws CategoryNotEmptyException {
+        requireKnownCategory(category);
+        List<Category> subtree = category.getSubtree();
+        Set<String> ids = new HashSet<>();
+        for (int i = 0; i < subtree.size(); i++) {
+            ids.add(subtree.get(i).getId());
+        }
+
+        int itemCount = 0;
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (countMatchingIds(all.get(i).getCategoryIds(), ids) > 0) {
+                itemCount++;
+            }
+        }
+        if (itemCount > 0) {
+            throw new CategoryNotEmptyException(category.getName(), itemCount);
+        }
+
+        if (category.getParent() != null) {
+            category.getParent().removeChild(category);
+        }
+        for (int i = 0; i < subtree.size(); i++) {
+            categoriesById.remove(subtree.get(i).getId());
+        }
+    }
+
+    /**
+     * @param id the category's id
+     * @return the category, or null if there is none
+     */
+    public Category findCategoryById(String id) {
+        if (id == null) {
+            return null;
+        }
+        return categoriesById.get(id);
+    }
+
+    /** @return a new list of the top-level categories, in no particular order */
+    public List<Category> getRootCategories() {
+        List<Category> roots = new ArrayList<>();
+        List<Category> all = new ArrayList<>(categoriesById.values());
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).isRoot()) {
+                roots.add(all.get(i));
+            }
+        }
+        return roots;
+    }
+
+    /**
+     * @param category the category to check
+     * @throws IllegalArgumentException if null or already added
+     */
+    private void requireNewCategory(Category category) {
+        if (category == null) {
+            throw new IllegalArgumentException("Category must not be null.");
+        }
+        if (categoriesById.containsKey(category.getId())) {
+            throw new IllegalArgumentException(
+                    "\"" + category.getName() + "\" has already been added.");
+        }
+    }
+
+    /**
+     * @param category the category to check
+     * @throws IllegalArgumentException if null or not in this collection
+     */
+    private void requireKnownCategory(Category category) {
+        if (category == null || !categoriesById.containsKey(category.getId())) {
+            throw new IllegalArgumentException("That category is not in this collection.");
+        }
+    }
+
+    /**
+     * @param name   the proposed top-level name
+     * @param ignore a category to leave out of the comparison (the one
+     *               being moved), or null
+     * @throws IllegalArgumentException if another root already has the name
+     */
+    private void requireUniqueRootCategoryName(String name, Category ignore) {
+        List<Category> roots = getRootCategories();
+        for (int i = 0; i < roots.size(); i++) {
+            Category root = roots.get(i);
+            if (root != ignore && root.getName().equalsIgnoreCase(name.trim())) {
+                throw new IllegalArgumentException(
+                        "A top-level category called \"" + root.getName() + "\" already exists.");
+            }
+        }
+    }
+
+    /** @param category the root of the subtree to index */
+    private void indexCategorySubtree(Category category) {
+        List<Category> subtree = category.getSubtree();
+        for (int i = 0; i < subtree.size(); i++) {
+            categoriesById.put(subtree.get(i).getId(), subtree.get(i));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Locations - the same rules as categories, but a location is "not
+    // empty" when copies are kept in it, not when items are filed under it.
+    // ------------------------------------------------------------------
+
+    /**
+     * Adds a top-level location, together with anything already inside it -
+     * so a shelf from {@link Location#createShelfWithRows} arrives with its
+     * rows.
+     *
+     * @param location the location; must be top-level
+     * @throws IllegalArgumentException if null, already added, not
+     *                                  top-level, or another top-level
+     *                                  location has the same name
+     */
+    public void addLocation(Location location) {
+        requireNewLocation(location);
+        if (!location.isRoot()) {
+            throw new IllegalArgumentException(
+                    "\"" + location.getName() + "\" is inside another location; add it there instead.");
+        }
+        requireUniqueRootLocationName(location.getName(), location);
+        indexLocationSubtree(location);
+    }
+
+    /**
+     * Adds a location inside an existing one.
+     *
+     * @param location the new location
+     * @param parent   an existing location to put it in
+     * @throws IllegalArgumentException if either is invalid, or the parent
+     *                                  already contains one of that name
+     */
+    public void addLocation(Location location, Location parent) {
+        requireNewLocation(location);
+        requireKnownLocation(parent);
+        parent.addChild(location);
+        indexLocationSubtree(location);
+    }
+
+    /**
+     * Moves a location, with everything inside it, to a new parent. Copies
+     * travel with it, since they refer to it by id.
+     *
+     * @param location  an existing location
+     * @param newParent the new parent, or null to make it top-level
+     * @throws IllegalArgumentException if the move would put it inside
+     *                                  itself or clash with a name already
+     *                                  there
+     */
+    public void moveLocation(Location location, Location newParent) {
+        requireKnownLocation(location);
+        if (newParent == null) {
+            if (location.isRoot()) {
+                return;
+            }
+            requireUniqueRootLocationName(location.getName(), location);
+            location.getParent().removeChild(location);
+        } else {
+            requireKnownLocation(newParent);
+            newParent.addChild(location);
+        }
+    }
+
+    /**
+     * Deletes a location and everything inside it.
+     * <p>
+     * Refused while any copy is kept anywhere inside, trashed books'
+     * copies included, for the same reason as
+     * {@link #deleteCategory(Category)}.
+     *
+     * @param location an existing location
+     * @throws LocationNotEmptyException if copies are kept inside it
+     * @throws IllegalArgumentException  if the location is not known
+     */
+    public void deleteLocation(Location location) throws LocationNotEmptyException {
+        requireKnownLocation(location);
+        List<Location> subtree = location.getSubtree();
+        Set<String> ids = new HashSet<>();
+        for (int i = 0; i < subtree.size(); i++) {
+            ids.add(subtree.get(i).getId());
+        }
+
+        int copyCount = 0;
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i) instanceof Book) {
+                copyCount += countCopiesIn((Book) all.get(i), ids);
+            }
+        }
+        if (copyCount > 0) {
+            throw new LocationNotEmptyException(location.getName(), copyCount);
+        }
+
+        if (location.getParent() != null) {
+            location.getParent().removeChild(location);
+        }
+        for (int i = 0; i < subtree.size(); i++) {
+            locationsById.remove(subtree.get(i).getId());
+        }
+    }
+
+    /**
+     * @param id the location's id
+     * @return the location, or null if there is none
+     */
+    public Location findLocationById(String id) {
+        if (id == null) {
+            return null;
+        }
+        return locationsById.get(id);
+    }
+
+    /** @return a new list of the top-level locations, in no particular order */
+    public List<Location> getRootLocations() {
+        List<Location> roots = new ArrayList<>();
+        List<Location> all = new ArrayList<>(locationsById.values());
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).isRoot()) {
+                roots.add(all.get(i));
+            }
+        }
+        return roots;
+    }
+
+    /**
+     * @param location the location to check
+     * @throws IllegalArgumentException if null or already added
+     */
+    private void requireNewLocation(Location location) {
+        if (location == null) {
+            throw new IllegalArgumentException("Location must not be null.");
+        }
+        if (locationsById.containsKey(location.getId())) {
+            throw new IllegalArgumentException(
+                    "\"" + location.getName() + "\" has already been added.");
+        }
+    }
+
+    /**
+     * @param location the location to check
+     * @throws IllegalArgumentException if null or not in this collection
+     */
+    private void requireKnownLocation(Location location) {
+        if (location == null || !locationsById.containsKey(location.getId())) {
+            throw new IllegalArgumentException("That location is not in this collection.");
+        }
+    }
+
+    /**
+     * @param name   the proposed top-level name
+     * @param ignore a location to leave out of the comparison, or null
+     * @throws IllegalArgumentException if another root already has the name
+     */
+    private void requireUniqueRootLocationName(String name, Location ignore) {
+        List<Location> roots = getRootLocations();
+        for (int i = 0; i < roots.size(); i++) {
+            Location root = roots.get(i);
+            if (root != ignore && root.getName().equalsIgnoreCase(name.trim())) {
+                throw new IllegalArgumentException(
+                        "A top-level location called \"" + root.getName() + "\" already exists.");
+            }
+        }
+    }
+
+    /** @param location the root of the subtree to index */
+    private void indexLocationSubtree(Location location) {
+        List<Location> subtree = location.getSubtree();
+        for (int i = 0; i < subtree.size(); i++) {
+            locationsById.put(subtree.get(i).getId(), subtree.get(i));
+        }
     }
 
     // ------------------------------------------------------------------
