@@ -5,6 +5,10 @@ import com.shelfwise.core.exception.InvalidISBNException;
 import com.shelfwise.core.model.Book;
 import com.shelfwise.core.model.Category;
 import com.shelfwise.core.model.CollectionItem;
+import com.shelfwise.core.model.Contributor;
+import com.shelfwise.core.model.Copy;
+import com.shelfwise.core.model.Location;
+import com.shelfwise.core.model.ReadingStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -257,5 +261,115 @@ class CollectionManagerTest {
         m.addItem("Dune");
         CollectionItem item = m.getItems().get(0);
         assertEquals("Dune", item.getTitle());
+    }
+
+    // ------------------------------------------------------------------
+    // Search
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("text search covers title, subtitle, author, publisher and ISBN, ignoring case")
+    void textSearchFields() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem(DUNE_ISBN, "Dune");
+        dune.setSubtitle("Deluxe Edition");
+        dune.setPublisher("Penguin");
+        dune.addContributor(new Contributor("Frank Herbert"));
+        m.addItem("Neuromancer");
+
+        assertEquals(1, m.search("dUNe").size());
+        assertEquals(1, m.search("deluxe").size());
+        assertEquals(1, m.search("herbert").size());
+        assertEquals(1, m.search("PENGUIN").size());
+        assertEquals(0, m.search("Gibson").size());
+    }
+
+    @Test
+    @DisplayName("an ISBN fragment typed with hyphens still finds the book")
+    void textSearchIsbnWithHyphens() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem(DUNE_ISBN, "Dune");
+        assertSame(dune, m.search("978-0-14").get(0));
+    }
+
+    @Test
+    @DisplayName("blank text returns every live item")
+    void blankSearchReturnsAll() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        m.addItem("Dune");
+        m.addItem("Neuromancer");
+        assertEquals(2, m.search("  ").size());
+        assertEquals(2, m.search((String) null).size());
+    }
+
+    @Test
+    @DisplayName("trashed items never appear in search results")
+    void searchExcludesTrash() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem("Dune");
+        dune.setReadingStatus(ReadingStatus.FINISHED);
+        m.moveToTrash(dune.getId());
+
+        assertEquals(0, m.search("Dune").size());
+        assertEquals(0, m.search(ReadingStatus.FINISHED).size());
+    }
+
+    @Test
+    @DisplayName("category search includes books filed under sub-categories")
+    void categorySearchIncludesDescendants() throws DuplicateItemException {
+        Category fiction = new Category("Fiction");
+        Category scifi = new Category("Science fiction");
+        fiction.addChild(scifi);
+
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem("Dune");
+        dune.addCategoryId(scifi.getId());
+        m.addItem("Uncategorised");
+
+        assertEquals(1, m.search(fiction).size());
+        assertSame(dune, m.search(scifi).get(0));
+    }
+
+    @Test
+    @DisplayName("location search finds a book if any one of its copies is inside")
+    void locationSearchAnyCopy() throws DuplicateItemException {
+        Location shelf = Location.createShelfWithRows("Study shelf", 2);
+        Location row2 = shelf.getChildren().get(1);
+        Location bedroom = new Location("Bedroom");
+
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem("Dune");
+        dune.getCopies().get(0).setLocationId(bedroom.getId());
+        Copy second = new Copy();
+        second.setLocationId(row2.getId());
+        dune.addCopy(second);
+
+        // Found via the shelf (copy in row 2) and via the bedroom (first copy).
+        assertSame(dune, m.search(shelf).get(0));
+        assertSame(dune, m.search(bedroom).get(0));
+        assertEquals(0, m.search(new Location("Loft")).size());
+    }
+
+    @Test
+    @DisplayName("status search returns books at that status only")
+    void statusSearch() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        Book reading = m.addItem("Dune");
+        reading.setReadingStatus(ReadingStatus.READING);
+        m.addItem("Neuromancer");
+
+        assertSame(reading, m.search(ReadingStatus.READING).get(0));
+        assertEquals(1, m.search(ReadingStatus.UNREAD).size());
+    }
+
+    @Test
+    @DisplayName("the manager can be used through the Searchable interface")
+    void usableAsSearchable() throws DuplicateItemException {
+        // Declared type is the interface: the screen needs only "something
+        // searchable", not the whole manager.
+        CollectionManager m = new CollectionManager();
+        m.addItem("Dune");
+        Searchable searchable = m;
+        assertEquals(1, searchable.search("dune").size());
     }
 }

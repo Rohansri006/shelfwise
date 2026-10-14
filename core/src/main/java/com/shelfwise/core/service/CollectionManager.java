@@ -5,16 +5,22 @@ import com.shelfwise.core.exception.InvalidISBNException;
 import com.shelfwise.core.model.Book;
 import com.shelfwise.core.model.Category;
 import com.shelfwise.core.model.CollectionItem;
+import com.shelfwise.core.model.Contributor;
+import com.shelfwise.core.model.Copy;
 import com.shelfwise.core.model.IsbnValidator;
 import com.shelfwise.core.model.Location;
+import com.shelfwise.core.model.ReadingStatus;
 import com.shelfwise.core.model.Series;
 import com.shelfwise.core.model.Wishlist;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The collection held in memory, and the rules that span more than one
@@ -36,7 +42,7 @@ import java.util.Map;
  * use and is built back from one, which keeps it testable without any
  * storage at all.
  */
-public class CollectionManager {
+public class CollectionManager implements Searchable {
 
     /** Every item, trashed ones included, keyed by id. */
     private final Map<String, CollectionItem> itemsById;
@@ -277,6 +283,193 @@ public class CollectionManager {
             itemsById.remove(trash.get(i).getId());
         }
         return trash.size();
+    }
+
+    // ------------------------------------------------------------------
+    // Searching - the four Searchable overloads
+    // ------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * An ISBN typed with hyphens still matches, because the query is also
+     * compared in normalised form against the stored, normalised ISBN.
+     */
+    @Override
+    public List<CollectionItem> search(String text) {
+        List<CollectionItem> live = getItems();
+        if (text == null || text.trim().isEmpty()) {
+            return live;
+        }
+        String query = text.trim().toLowerCase(Locale.ROOT);
+        String isbnQuery = IsbnValidator.normalise(text.trim());
+
+        List<CollectionItem> result = new ArrayList<>();
+        for (int i = 0; i < live.size(); i++) {
+            if (matchesText(live.get(i), query, isbnQuery)) {
+                result.add(live.get(i));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The subtree's ids go into a {@link HashSet} first, so testing each of
+     * an item's categories is one quick {@code contains} rather than a walk
+     * down the tree.
+     *
+     * @throws IllegalArgumentException if category is null
+     */
+    @Override
+    public List<CollectionItem> search(Category category) {
+        if (category == null) {
+            throw new IllegalArgumentException("Category must not be null.");
+        }
+        Set<String> wanted = new HashSet<>();
+        List<Category> subtree = category.getSubtree();
+        for (int i = 0; i < subtree.size(); i++) {
+            wanted.add(subtree.get(i).getId());
+        }
+
+        List<CollectionItem> result = new ArrayList<>();
+        List<CollectionItem> live = getItems();
+        for (int i = 0; i < live.size(); i++) {
+            if (countMatchingIds(live.get(i).getCategoryIds(), wanted) > 0) {
+                result.add(live.get(i));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * A book matches if <em>any</em> of its copies is inside the location,
+     * because copies of one title can sit on different shelves.
+     *
+     * @throws IllegalArgumentException if location is null
+     */
+    @Override
+    public List<CollectionItem> search(Location location) {
+        if (location == null) {
+            throw new IllegalArgumentException("Location must not be null.");
+        }
+        Set<String> wanted = new HashSet<>();
+        List<Location> subtree = location.getSubtree();
+        for (int i = 0; i < subtree.size(); i++) {
+            wanted.add(subtree.get(i).getId());
+        }
+
+        List<CollectionItem> result = new ArrayList<>();
+        List<CollectionItem> live = getItems();
+        for (int i = 0; i < live.size(); i++) {
+            if (live.get(i) instanceof Book
+                    && countCopiesIn((Book) live.get(i), wanted) > 0) {
+                result.add(live.get(i));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException if status is null
+     */
+    @Override
+    public List<CollectionItem> search(ReadingStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Reading status must not be null.");
+        }
+        List<CollectionItem> result = new ArrayList<>();
+        List<CollectionItem> live = getItems();
+        for (int i = 0; i < live.size(); i++) {
+            if (live.get(i) instanceof Book
+                    && ((Book) live.get(i)).getReadingStatus() == status) {
+                result.add(live.get(i));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Whether an item matches a free-text query. Every item is searched by
+     * title; books are also searched by their own fields.
+     *
+     * @param item      the item to test
+     * @param query     the query, lowercased
+     * @param isbnQuery the query with hyphens and spaces removed
+     * @return true if any searched field contains the query
+     */
+    private boolean matchesText(CollectionItem item, String query, String isbnQuery) {
+        if (containsIgnoreCase(item.getTitle(), query)) {
+            return true;
+        }
+        if (!(item instanceof Book)) {
+            return false;
+        }
+        Book book = (Book) item;
+        if (containsIgnoreCase(book.getSubtitle(), query)
+                || containsIgnoreCase(book.getPublisher(), query)) {
+            return true;
+        }
+        if (book.hasIsbn() && !isbnQuery.isEmpty() && book.getIsbn().contains(isbnQuery)) {
+            return true;
+        }
+        List<Contributor> contributors = book.getContributors();
+        for (int i = 0; i < contributors.size(); i++) {
+            if (containsIgnoreCase(contributors.get(i).getName(), query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Null-safe, case-insensitive "contains". {@code Locale.ROOT} keeps
+     * lowercasing the same on every machine; under a Turkish locale, for
+     * example, "I" would otherwise not lowercase to "i".
+     *
+     * @param field the field's value; may be null
+     * @param query the query, already lowercased
+     * @return true if the field contains the query
+     */
+    private static boolean containsIgnoreCase(String field, String query) {
+        return field != null && field.toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    /**
+     * @param ids    the ids to test
+     * @param wanted the ids being looked for
+     * @return how many of {@code ids} are in {@code wanted}
+     */
+    private static int countMatchingIds(List<String> ids, Set<String> wanted) {
+        int count = 0;
+        for (int i = 0; i < ids.size(); i++) {
+            if (wanted.contains(ids.get(i))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * @param book        the book
+     * @param locationIds the location ids being looked for
+     * @return how many of the book's copies are in one of those locations
+     */
+    private static int countCopiesIn(Book book, Set<String> locationIds) {
+        int count = 0;
+        List<Copy> copies = book.getCopies();
+        for (int i = 0; i < copies.size(); i++) {
+            String locationId = copies.get(i).getLocationId();
+            if (locationId != null && locationIds.contains(locationId)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     // ------------------------------------------------------------------
