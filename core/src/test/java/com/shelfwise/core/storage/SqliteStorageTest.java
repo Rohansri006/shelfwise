@@ -204,4 +204,34 @@ class SqliteStorageTest {
 
         assertTrue(millis < 200, "1,000-book save took " + millis + " ms");
     }
+
+    @Test
+    @DisplayName("a first run has nothing to back up")
+    void firstRunNoBackup() throws Exception {
+        SqliteStorage storage = new SqliteStorage(folder);
+        storage.save(sampleData("INR"));
+        assertTrue(storage.getBackups().listBackups().isEmpty());
+    }
+
+    @Test
+    @DisplayName("each launch backs up once, before its first write, and never again")
+    void backupOncePerLaunch() throws Exception {
+        new SqliteStorage(folder).save(sampleData("INR"));
+
+        // Second launch: load, then autosave three times.
+        SqliteStorage launch = new SqliteStorage(folder);
+        launch.load();
+        launch.save(sampleData("USD"));
+        launch.save(sampleData("EUR"));
+        launch.save(sampleData("GBP"));
+
+        assertEquals(1, launch.getBackups().listBackups().size());
+        // The backup holds the collection as it was before this session
+        // changed anything: still priced in INR.
+        Path backup = launch.getBackups().listBackups().get(0);
+        Path restoreFolder = folder.resolve("restore");
+        Files.createDirectories(restoreFolder);
+        Files.copy(backup, restoreFolder.resolve(SqliteStorage.DATABASE_FILE));
+        assertEquals("INR", new SqliteStorage(restoreFolder).load().getCurrencyCode());
+    }
 }

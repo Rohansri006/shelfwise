@@ -39,11 +39,20 @@ import java.util.List;
  * If it has changed by the next save, something else wrote the file, and
  * the save is refused with {@link SyncConflictException} rather than
  * destroying that work. {@link #rebaseline()} is the "keep mine" answer.
+ * <p>
+ * <strong>Backups, once per launch.</strong> The first save made by this
+ * object copies the existing file into {@code backups/} before writing
+ * anything (ADR 0002). One {@code SqliteStorage} is created per app launch,
+ * so with autosave the five kept backups cover the last five sessions, not
+ * the last five edits.
  */
 public class SqliteStorage implements StorageProvider {
 
     /** The database's file name inside the data folder. */
     public static final String DATABASE_FILE = "shelfwise.db";
+
+    /** The backups folder's name inside the data folder. */
+    public static final String BACKUP_FOLDER = "backups";
 
     private final Database database;
     private final BookDao bookDao = new BookDao();
@@ -52,6 +61,10 @@ public class SqliteStorage implements StorageProvider {
     private final SeriesDao seriesDao = new SeriesDao();
     private final WishlistDao wishlistDao = new WishlistDao();
     private final SettingDao settingDao = new SettingDao();
+    private final BackupManager backups;
+
+    /** Whether this object (this launch) has already taken its backup. */
+    private boolean backedUpThisSession;
 
     /**
      * The file's last-modified time as of this object's last load or save,
@@ -69,6 +82,7 @@ public class SqliteStorage implements StorageProvider {
             throw new IllegalArgumentException("Data folder must not be null.");
         }
         this.database = new Database(dataFolder.resolve(DATABASE_FILE));
+        this.backups = new BackupManager(dataFolder.resolve(BACKUP_FOLDER));
     }
 
     /** @return the database file this storage reads and writes */
@@ -129,6 +143,7 @@ public class SqliteStorage implements StorageProvider {
             throw new IllegalArgumentException("Collection data must not be null.");
         }
         checkForConflict();
+        backUpOncePerSession();
         try {
             database.initialiseSchema();
             try (Connection connection = database.openConnection()) {
@@ -158,6 +173,29 @@ public class SqliteStorage implements StorageProvider {
                     + e.getMessage(), e);
         }
         knownModified = lastModified();
+    }
+
+    /**
+     * On the first save of this launch, copies the file as it was before
+     * this session changed anything. On a first run there is no file yet,
+     * so nothing is copied. If the copy fails the save is abandoned: writing
+     * without the safety net is not worth the risk.
+     *
+     * @throws IOException if the backup cannot be written
+     */
+    private void backUpOncePerSession() throws IOException {
+        if (backedUpThisSession) {
+            return;
+        }
+        if (dataExists()) {
+            backups.backUp(database.getFile());
+        }
+        backedUpThisSession = true;
+    }
+
+    /** @return the manager of this collection's backups, e.g. to list them */
+    public BackupManager getBackups() {
+        return backups;
     }
 
     /**
