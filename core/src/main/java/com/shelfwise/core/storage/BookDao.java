@@ -71,7 +71,7 @@ public class BookDao {
         String sessionSql = "INSERT INTO reading_session (id, book_item_id, start_date, end_date, "
                 + "pages_read, percent_complete) VALUES (?, ?, ?, ?, ?, ?)";
 
-        // (name, role) -> contributor row id, so each pair is inserted once.
+        // Maps "name|role" to its contributor row id, so each pair is inserted once.
         Map<String, String> contributorIds = new HashMap<>();
 
         try (PreparedStatement item = connection.prepareStatement(itemSql);
