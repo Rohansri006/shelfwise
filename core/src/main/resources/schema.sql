@@ -163,6 +163,10 @@ CREATE TABLE IF NOT EXISTS contributor (
 CREATE TABLE IF NOT EXISTS book_contributor (
     book_item_id    TEXT NOT NULL REFERENCES book(item_id) ON DELETE CASCADE,
     contributor_id  TEXT NOT NULL REFERENCES contributor(id) ON DELETE CASCADE,
+    -- Order of credit on the book, from 0. Rows in a table have no order
+    -- of their own, so without this the primary author (the first AUTHOR)
+    -- could change on every reload.
+    position        INTEGER NOT NULL DEFAULT 0 CHECK (position >= 0),
     PRIMARY KEY (book_item_id, contributor_id)
 );
 
@@ -230,8 +234,13 @@ CREATE TABLE IF NOT EXISTS wishlist_entry (
 
 CREATE TABLE IF NOT EXISTS custom_field (
     item_id      TEXT NOT NULL REFERENCES item(id) ON DELETE CASCADE,
-    field_key    TEXT NOT NULL CHECK (length(trim(field_key)) > 0),
+    -- NOCASE: "Signed" and "signed" are the same field, so the primary key
+    -- refuses a second spelling of one key on the same item.
+    field_key    TEXT NOT NULL COLLATE NOCASE CHECK (length(trim(field_key)) > 0),
     field_value  TEXT,
+    -- Order the user added the fields in, from 0, matching the model's
+    -- LinkedHashMap. Without it, fields come back in arbitrary order.
+    position     INTEGER NOT NULL DEFAULT 0 CHECK (position >= 0),
     PRIMARY KEY (item_id, field_key)
 );
 
