@@ -9,7 +9,9 @@ import com.shelfwise.core.model.Wishlist;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Everything in one collection, handed between the service layer and a
@@ -23,7 +25,11 @@ import java.util.List;
  * <p>
  * Categories and locations are passed as <strong>every node</strong>, not
  * only the roots, with their parent and child links already wired. The user
- * profile is not here: it lives in the settings file, not the database.
+ * is not here: it lives in the settings file, not the database.
+ * <p>
+ * The currency is here because prices are plain numbers: whatever stores the
+ * prices must store what they mean alongside them, or a copied database
+ * would lose track of it.
  */
 public class CollectionData {
 
@@ -45,9 +51,16 @@ public class CollectionData {
     /** When this was last saved, or null if it never has been. */
     private final Instant savedAt;
 
+    /** The currency every price is recorded in, as an ISO 4217 code such as "INR". */
+    private final String currencyCode;
+
+    /** The currency a new collection starts with. */
+    public static final String DEFAULT_CURRENCY = "INR";
+
     /**
-     * Creates a snapshot. A null list is treated as empty, so a caller with
-     * nothing of one kind need not build an empty list to pass in.
+     * Creates a snapshot priced in the default currency. A null list is
+     * treated as empty, so a caller with nothing of one kind need not build
+     * an empty list to pass in.
      *
      * @param books      every book
      * @param categories every category node
@@ -59,12 +72,56 @@ public class CollectionData {
     public CollectionData(List<Book> books, List<Category> categories,
                           List<Location> locations, List<Series> series,
                           List<Wishlist> wishlists, Instant savedAt) {
+        this(books, categories, locations, series, wishlists, savedAt, DEFAULT_CURRENCY);
+    }
+
+    /**
+     * Creates a snapshot with an explicit currency.
+     *
+     * @param books        every book
+     * @param categories   every category node
+     * @param locations    every location node
+     * @param series       every series
+     * @param wishlists    every wishlist
+     * @param savedAt      when it was saved, or null if never
+     * @param currencyCode an ISO 4217 code such as "INR"; case is ignored
+     * @throws IllegalArgumentException if the code is null or not a real
+     *                                  currency
+     */
+    public CollectionData(List<Book> books, List<Category> categories,
+                          List<Location> locations, List<Series> series,
+                          List<Wishlist> wishlists, Instant savedAt,
+                          String currencyCode) {
         this.books = copyOf(books);
         this.categories = copyOf(categories);
         this.locations = copyOf(locations);
         this.series = copyOf(series);
         this.wishlists = copyOf(wishlists);
         this.savedAt = savedAt;
+        this.currencyCode = validCurrency(currencyCode);
+    }
+
+    /**
+     * Checks a currency code against Java's own list of ISO 4217 currencies.
+     * {@link Currency#getInstance(String)} already throws
+     * {@code IllegalArgumentException} for an unknown code; it is caught and
+     * rethrown only to put the offending value in the message.
+     *
+     * @param code the code to check
+     * @return the code in upper case
+     * @throws IllegalArgumentException if null or not a real currency
+     */
+    private static String validCurrency(String code) {
+        if (code == null) {
+            throw new IllegalArgumentException("Currency code must not be null.");
+        }
+        String upper = code.trim().toUpperCase(Locale.ROOT);
+        try {
+            return Currency.getInstance(upper).getCurrencyCode();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "\"" + code + "\" is not a recognised currency code.", e);
+        }
     }
 
     /**
@@ -113,5 +170,10 @@ public class CollectionData {
     /** @return when it was last saved, or null if never */
     public Instant getSavedAt() {
         return savedAt;
+    }
+
+    /** @return the ISO 4217 code every price is recorded in, e.g. "INR" */
+    public String getCurrencyCode() {
+        return currencyCode;
     }
 }
