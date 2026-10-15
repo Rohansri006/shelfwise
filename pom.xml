@@ -32,6 +32,9 @@
         <jna.version>5.18.1</jna.version>
         <slf4j.version>2.0.17</slf4j.version>
         <zxing.version>3.5.3</zxing.version>
+        <!-- SQLite JDBC driver: bundles native SQLite for each platform, including
+             macOS on Apple Silicon (Mac/aarch64), so nothing needs installing. -->
+        <sqlite.jdbc.version>3.53.4.0</sqlite.jdbc.version>
     </properties>
 
     <dependencyManagement>
@@ -45,6 +48,11 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>${sqlite.jdbc.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
