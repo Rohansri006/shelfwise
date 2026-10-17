@@ -1,0 +1,23 @@
+{
+  "kind": "books#volumes",
+  "totalItems": 1,
+  "items": [
+    {
+      "kind": "books#volume",
+      "id": "handwrittenSample",
+      "volumeInfo": {
+        "title": "Glimpses of World History",
+        "subtitle": "Being Further Letters to His Daughter",
+        "authors": ["Jawaharlal Nehru"],
+        "publisher": "Penguin Books India",
+        "publishedDate": "2004-10-01",
+        "pageCount": 1192,
+        "language": "en",
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=handwrittenSample&printsec=frontcover&img=1&zoom=5",
+          "thumbnail": "http://books.google.com/books/content?id=handwrittenSample&printsec=frontcover&img=1&zoom=1"
+        }
+      }
+    }
+  ]
+}
