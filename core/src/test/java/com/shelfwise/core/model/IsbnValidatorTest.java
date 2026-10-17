@@ -92,4 +92,31 @@ class IsbnValidatorTest {
         // Books legitimately have no ISBN, so null must flow through quietly.
         assertEquals(null, IsbnValidator.normalise(null));
     }
+
+    @Test
+    @DisplayName("an ISBN-10 converts to the ISBN-13 of the same book")
+    void isbn10ConvertsTo13() throws InvalidISBNException {
+        // Values checked against the project's two known real ISBNs.
+        assertEquals("9780143031055", IsbnValidator.toIsbn13("0143031058"));
+        assertEquals("9788183071000", IsbnValidator.toIsbn13("81-8307-100-7"));
+        // An X check digit on the ISBN-10 side still converts.
+        assertEquals("9780141187761", IsbnValidator.toIsbn13("014118776X"));
+    }
+
+    @Test
+    @DisplayName("an ISBN-13 passes through unchanged, hyphens removed")
+    void isbn13PassesThrough() throws InvalidISBNException {
+        assertEquals("9780143031055", IsbnValidator.toIsbn13("978-0-14-303105-5"));
+    }
+
+    @Test
+    @DisplayName("an invalid ISBN cannot be converted")
+    void invalidCannotConvert() {
+        assertThrows(InvalidISBNException.class, new org.junit.jupiter.api.function.Executable() {
+            @Override
+            public void execute() throws Throwable {
+                IsbnValidator.toIsbn13("0143031059");
+            }
+        });
+    }
 }
