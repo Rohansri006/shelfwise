@@ -25,6 +25,9 @@ public class MetadataFetchException extends ShelfWiseException {
     /** The ISBN that was being looked up. */
     private final String isbn;
 
+    /** Why it failed, in a few words, e.g. "no record found". */
+    private final String reason;
+
     /**
      * Creates an exception for a provider that answered, but unhelpfully -
      * typically "no record found".
@@ -37,6 +40,7 @@ public class MetadataFetchException extends ShelfWiseException {
         super(providerName + " could not supply details for ISBN " + isbn + ": " + reason + ".");
         this.providerName = providerName;
         this.isbn = isbn;
+        this.reason = reason;
     }
 
     /**
@@ -51,6 +55,7 @@ public class MetadataFetchException extends ShelfWiseException {
                 + isbn + ": " + cause.getMessage(), cause);
         this.providerName = providerName;
         this.isbn = isbn;
+        this.reason = "could not be reached";
     }
 
     /** @return which provider failed */
@@ -61,5 +66,15 @@ public class MetadataFetchException extends ShelfWiseException {
     /** @return the ISBN that was being looked up */
     public String getIsbn() {
         return isbn;
+    }
+
+    /**
+     * The failure in a few words, without the provider name or ISBN, so a
+     * caller can build its own wording: "Google Books: rate limit reached".
+     *
+     * @return the reason, e.g. "no record found"
+     */
+    public String getReason() {
+        return reason;
     }
 }

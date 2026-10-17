@@ -119,6 +119,15 @@ class ShelfWiseExceptionTest {
     }
 
     @Test
+    @DisplayName("MetadataFetchException gives its reason on its own, for the caller's own wording")
+    void metadataReason() {
+        assertEquals("no record found",
+                new MetadataFetchException("Open Library", "9780140303105", "no record found").getReason());
+        assertEquals("could not be reached",
+                new MetadataFetchException("Google Books", "9780140303105", new IOException("x")).getReason());
+    }
+
+    @Test
     @DisplayName("MetadataFetchException preserves the underlying cause")
     void metadataPreservesCause() {
         // Chaining matters here: the real diagnosis of a failed lookup is
