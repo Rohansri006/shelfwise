@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
  * how its answer is laid out ({@link #parse}). The network code, timeouts and
  * error handling are written once, here.
  * <p>
- * Uses {@link HttpURLConnection}, not {@code java.net.http.HttpClient},
+ * Uses {@link HttpURLConnection}, not the newer {@code HttpClient},
  * because {@code core} is reused by the Android app and the older class
  * works there unchanged.
  * <p>
