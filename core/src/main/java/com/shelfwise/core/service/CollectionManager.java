@@ -805,6 +805,198 @@ public class CollectionManager implements Searchable {
     }
 
     // ------------------------------------------------------------------
+    // Edits that span the collection (ADR 0006)
+    //
+    // Each model setter checks only its own object: Book.setIsbn cannot
+    // see the other books, Category.setName cannot see its siblings. The
+    // rules that need the whole collection - unique ISBNs and names, and
+    // references to things that exist - are checked here, before anything
+    // changes, so the screens should make these edits through the manager.
+    // checkIntegrity() is the safety net for an edit that did not.
+    // ------------------------------------------------------------------
+
+    /**
+     * Changes a book's ISBN, refusing one that another book already has.
+     * <p>
+     * Also moves the book to its new key in the ISBN index - something
+     * calling {@link Book#setIsbn} directly would not do.
+     *
+     * @param book    a book in this collection
+     * @param newIsbn the new ISBN, 10 or 13 digits; null or blank clears it
+     * @throws InvalidISBNException     if present but not a valid ISBN
+     * @throws DuplicateItemException   if another book, trashed or not, has it
+     * @throws IllegalArgumentException if the book is not in this collection
+     */
+    public void changeIsbn(Book book, String newIsbn)
+            throws InvalidISBNException, DuplicateItemException {
+        requireKnownItem(book);
+        String canonical = null;
+        if (newIsbn != null && !newIsbn.trim().isEmpty()) {
+            // Converted first so the duplicate check compares like with like.
+            canonical = IsbnValidator.toIsbn13(newIsbn);
+            Book existing = booksByIsbn.get(canonical);
+            if (existing != null && existing != book) {
+                throw new DuplicateItemException(
+                        canonical, existing.getId(), existing.getTitle());
+            }
+        }
+        if (book.hasIsbn()) {
+            booksByIsbn.remove(book.getIsbn());
+        }
+        book.setIsbn(canonical);
+        indexIsbn(book);
+    }
+
+    /**
+     * Renames a category, refusing a name a sibling already has. For a
+     * top-level category the siblings are the other top-level categories.
+     *
+     * @param category an existing category
+     * @param newName  the new name; must not be blank
+     * @throws IllegalArgumentException if the category is not known, the
+     *                                  name is blank, or a sibling has it
+     */
+    public void renameCategory(Category category, String newName) {
+        requireKnownCategory(category);
+        requireNotBlank(newName, "Category name");
+        if (category.isRoot()) {
+            requireUniqueRootCategoryName(newName, category);
+        } else {
+            Category clash = category.getParent().findChildByName(newName);
+            if (clash != null && clash != category) {
+                throw new IllegalArgumentException("\"" + category.getParent().getName()
+                        + "\" already has a sub-category called \"" + clash.getName() + "\".");
+            }
+        }
+        category.setName(newName);
+    }
+
+    /**
+     * Renames a location, refusing a name a sibling already has - two
+     * shelves in one room cannot both be "Shelf A", but every shelf may
+     * have its own "Row 1".
+     *
+     * @param location an existing location
+     * @param newName  the new name; must not be blank
+     * @throws IllegalArgumentException if the location is not known, the
+     *                                  name is blank, or a sibling has it
+     */
+    public void renameLocation(Location location, String newName) {
+        requireKnownLocation(location);
+        requireNotBlank(newName, "Location name");
+        if (location.isRoot()) {
+            requireUniqueRootLocationName(newName, location);
+        } else {
+            Location clash = location.getParent().findChildByName(newName);
+            if (clash != null && clash != location) {
+                throw new IllegalArgumentException("\"" + location.getParent().getName()
+                        + "\" already has a place called \"" + clash.getName() + "\".");
+            }
+        }
+        location.setName(newName);
+    }
+
+    /**
+     * Renames a series, refusing a name another series already has.
+     *
+     * @param series  an existing series
+     * @param newName the new name; must not be blank
+     * @throws IllegalArgumentException if the series is not known, the name
+     *                                  is blank, or another series has it
+     */
+    public void renameSeries(Series series, String newName) {
+        if (series == null || !seriesById.containsKey(series.getId())) {
+            throw new IllegalArgumentException("That series is not in this collection.");
+        }
+        requireNotBlank(newName, "Series name");
+        List<Series> all = getSeries();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i) != series && all.get(i).getName().equalsIgnoreCase(newName.trim())) {
+                throw new IllegalArgumentException(
+                        "A series called \"" + all.get(i).getName() + "\" already exists.");
+            }
+        }
+        series.setName(newName);
+    }
+
+    /**
+     * Renames a wishlist, refusing a name another wishlist already has.
+     *
+     * @param wishlist an existing wishlist
+     * @param newName  the new name; must not be blank
+     * @throws IllegalArgumentException if the wishlist is not known, the
+     *                                  name is blank, or another has it
+     */
+    public void renameWishlist(Wishlist wishlist, String newName) {
+        if (wishlist == null || !wishlists.contains(wishlist)) {
+            throw new IllegalArgumentException("That wishlist is not in this collection.");
+        }
+        requireNotBlank(newName, "Wishlist name");
+        for (int i = 0; i < wishlists.size(); i++) {
+            Wishlist other = wishlists.get(i);
+            if (other != wishlist && other.getName().equalsIgnoreCase(newName.trim())) {
+                throw new IllegalArgumentException(
+                        "A wishlist called \"" + other.getName() + "\" already exists.");
+            }
+        }
+        wishlist.setName(newName);
+    }
+
+    /**
+     * Puts a copy in a location, or takes it off the shelves.
+     *
+     * @param copy     the copy to move; must not be null
+     * @param location a location in this collection, or null for unshelved
+     * @throws IllegalArgumentException if the copy is null or the location
+     *                                  is not in this collection
+     */
+    public void setLocation(Copy copy, Location location) {
+        if (copy == null) {
+            throw new IllegalArgumentException("Copy must not be null.");
+        }
+        if (location == null) {
+            copy.setLocationId(null);
+            return;
+        }
+        requireKnownLocation(location);
+        copy.setLocationId(location.getId());
+    }
+
+    /**
+     * Files an item under a category. Filing it under the same category
+     * twice changes nothing.
+     *
+     * @param item     an item in this collection
+     * @param category a category in this collection
+     * @throws IllegalArgumentException if either is not in this collection
+     */
+    public void fileUnder(CollectionItem item, Category category) {
+        requireKnownItem(item);
+        requireKnownCategory(category);
+        item.addCategoryId(category.getId());
+    }
+
+    /**
+     * Puts a book in a series, or takes it out of one.
+     *
+     * @param book   a book in this collection
+     * @param series a series in this collection, or null to take the book
+     *               out (which also clears its position)
+     * @throws IllegalArgumentException if either is not in this collection
+     */
+    public void setSeries(Book book, Series series) {
+        requireKnownItem(book);
+        if (series == null) {
+            book.setSeriesId(null);
+            return;
+        }
+        if (!seriesById.containsKey(series.getId())) {
+            throw new IllegalArgumentException("That series is not in this collection.");
+        }
+        book.setSeriesId(series.getId());
+    }
+
+    // ------------------------------------------------------------------
     // Searching - the four Searchable overloads
     // ------------------------------------------------------------------
 
@@ -1033,6 +1225,30 @@ public class CollectionManager implements Searchable {
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    /**
+     * @param item the item to check
+     * @throws IllegalArgumentException if null or not in this collection
+     */
+    private void requireKnownItem(CollectionItem item) {
+        if (item == null || itemsById.get(item.getId()) != item) {
+            throw new IllegalArgumentException("That item is not in this collection.");
+        }
+    }
+
+    /**
+     * Checked before any uniqueness test, so a blank name is reported as
+     * blank rather than compared against the other names.
+     *
+     * @param name what to check
+     * @param what how to describe it in the message, e.g. "Category name"
+     * @throws IllegalArgumentException if null or blank
+     */
+    private static void requireNotBlank(String name, String what) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException(what + " must not be blank.");
+        }
+    }
 
     /**
      * Every item as a list, so it can be walked with an indexed loop like

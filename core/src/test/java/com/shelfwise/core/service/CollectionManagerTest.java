@@ -702,4 +702,231 @@ class CollectionManagerTest {
         assertTrue(m.getWishlists().isEmpty());
         assertTrue(m.toCollectionData().getWishlists().isEmpty());
     }
+
+    // ------------------------------------------------------------------
+    // Edits that span the collection (ADR 0006)
+    // ------------------------------------------------------------------
+
+    /** A second checksum-valid ISBN, for tests that need two books. */
+    private static final String SECOND_ISBN = "9780141187761";
+
+    @Test
+    @DisplayName("changeIsbn moves a book to its new ISBN and frees the old one")
+    void changeIsbnReindexes() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book book = m.addItem(DUNE_ISBN, "Dune");
+
+        // Given as an ISBN-10, stored as ISBN-13 like every other route in.
+        m.changeIsbn(book, "014118776X");
+
+        assertEquals(SECOND_ISBN, book.getIsbn());
+        assertSame(book, m.findBookByIsbn(SECOND_ISBN));
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+        // The old ISBN is free for another book now.
+        assertNotNull(m.addItem(DUNE_ISBN, "Glimpses of World History"));
+    }
+
+    @Test
+    @DisplayName("changeIsbn refuses another book's ISBN and leaves the book unchanged")
+    void changeIsbnRefusesDuplicate() throws Exception {
+        final CollectionManager m = new CollectionManager();
+        Book first = m.addItem(DUNE_ISBN, "Dune");
+        final Book second = m.addItem(SECOND_ISBN, "Nineteen Eighty-Four");
+
+        DuplicateItemException e = assertThrows(DuplicateItemException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.changeIsbn(second, DUNE_ISBN);
+                    }
+                });
+        assertEquals(first.getId(), e.getExistingItemId());
+        assertEquals(SECOND_ISBN, second.getIsbn());
+        assertSame(second, m.findBookByIsbn(SECOND_ISBN));
+    }
+
+    @Test
+    @DisplayName("changeIsbn accepts the book's own ISBN, and a blank clears it")
+    void changeIsbnOwnAndBlank() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book book = m.addItem(DUNE_ISBN, "Dune");
+
+        // Retyping the same ISBN with hyphens is not a duplicate of itself.
+        m.changeIsbn(book, "978-0-14-303105-5");
+        assertSame(book, m.findBookByIsbn(DUNE_ISBN));
+
+        m.changeIsbn(book, "  ");
+        assertNull(book.getIsbn());
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+    }
+
+    @Test
+    @DisplayName("renaming a category to a sibling's name is refused, ignoring case")
+    void renameCategoryClash() {
+        final CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        final Category reference = new Category("Reference");
+        final Category scifi = new Category("Science fiction");
+        final Category fantasy = new Category("Fantasy");
+        m.addCategory(fiction);
+        m.addCategory(reference);
+        m.addCategory(scifi, fiction);
+        m.addCategory(fantasy, fiction);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameCategory(fantasy, "science FICTION");
+            }
+        });
+        assertEquals("Fantasy", fantasy.getName());
+
+        // Top-level categories are siblings of each other.
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameCategory(reference, "fiction");
+            }
+        });
+
+        // A name used elsewhere in the tree is fine, and so is a change of
+        // case to the category's own name.
+        Category finance = new Category("Finance");
+        m.addCategory(finance, reference);
+        m.renameCategory(finance, "Fantasy");
+        m.renameCategory(scifi, "Science Fiction");
+        assertEquals("Science Fiction", scifi.getName());
+    }
+
+    @Test
+    @DisplayName("renaming a location to a sibling's name is refused, but every shelf may have a Row 1")
+    void renameLocationClash() {
+        final CollectionManager m = new CollectionManager();
+        Location bedroom = new Location("Bedroom");
+        Location shelfA = new Location("Shelf A");
+        final Location shelfB = new Location("Shelf B");
+        m.addLocation(bedroom);
+        m.addLocation(shelfA, bedroom);
+        m.addLocation(shelfB, bedroom);
+        Location rowA = new Location("Row 1");
+        Location rowB = new Location("Top");
+        m.addLocation(rowA, shelfA);
+        m.addLocation(rowB, shelfB);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameLocation(shelfB, "shelf a");
+            }
+        });
+        m.renameLocation(rowB, "Row 1");
+        assertEquals("Row 1", rowB.getName());
+    }
+
+    @Test
+    @DisplayName("renaming a series or wishlist to a name already taken is refused")
+    void renameSeriesAndWishlist() {
+        final CollectionManager m = new CollectionManager();
+        final Series dune = new Series("Dune Chronicles");
+        m.addSeries(dune);
+        m.addSeries(new Series("Discworld"));
+        final Wishlist birthday = new Wishlist("Birthday");
+        m.addWishlist(birthday);
+        m.addWishlist(new Wishlist("Rare finds"));
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameSeries(dune, "DISCWORLD");
+            }
+        });
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameWishlist(birthday, "rare finds");
+            }
+        });
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameWishlist(birthday, " ");
+            }
+        });
+
+        m.renameSeries(dune, "Dune");
+        m.renameWishlist(birthday, "Diwali");
+        assertEquals("Dune", dune.getName());
+        assertEquals("Diwali", birthday.getName());
+    }
+
+    @Test
+    @DisplayName("a copy can only be put in a location that is in the collection")
+    void setLocationRequiresKnownLocation() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        Location shelf = new Location("Shelf");
+        m.addLocation(shelf);
+        final Copy copy = m.addItem("Dune").getCopies().get(0);
+
+        m.setLocation(copy, shelf);
+        assertEquals(shelf.getId(), copy.getLocationId());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.setLocation(copy, new Location("Not added"));
+            }
+        });
+        assertEquals(shelf.getId(), copy.getLocationId());
+
+        m.setLocation(copy, null);
+        assertTrue(copy.isUnshelved());
+    }
+
+    @Test
+    @DisplayName("an item can only be filed under a category that is in the collection")
+    void fileUnderRequiresKnownCategory() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        final Category fiction = new Category("Fiction");
+        m.addCategory(fiction);
+        final Book dune = m.addItem("Dune");
+
+        m.fileUnder(dune, fiction);
+        m.fileUnder(dune, fiction);
+        assertEquals(1, dune.getCategoryIds().size());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.fileUnder(dune, new Category("Not added"));
+            }
+        });
+        // A book that was never added cannot be filed either.
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.fileUnder(new Book("Stray"), fiction);
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("a book can only join a series that is in the collection")
+    void setSeriesRequiresKnownSeries() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        Series discworld = new Series("Discworld");
+        m.addSeries(discworld);
+        final Book guards = m.addItem("Guards! Guards!");
+
+        m.setSeries(guards, discworld);
+        assertEquals(discworld.getId(), guards.getSeriesId());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.setSeries(guards, new Series("Not added"));
+            }
+        });
+        m.setSeries(guards, null);
+        assertNull(guards.getSeriesId());
+    }
 }
