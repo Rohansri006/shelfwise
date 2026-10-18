@@ -371,6 +371,21 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("text search covers custom field values but not their names")
+    void textSearchCustomFieldValues() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem("Dune");
+        dune.setCustomField("Acquired at", "Daryaganj market");
+        Book other = m.addItem("Neuromancer");
+        other.setCustomField("Signed", "no");
+
+        assertSame(dune, m.search("daryaganj").get(0));
+        assertEquals(1, m.search("daryaganj").size());
+        // The field name alone finds nothing.
+        assertTrue(m.search("acquired").isEmpty());
+    }
+
+    @Test
     @DisplayName("blank text returns every live item")
     void blankSearchReturnsAll() throws DuplicateItemException {
         CollectionManager m = new CollectionManager();

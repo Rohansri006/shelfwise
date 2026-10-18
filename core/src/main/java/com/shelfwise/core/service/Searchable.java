@@ -21,8 +21,8 @@ import java.util.List;
 public interface Searchable {
 
     /**
-     * Free-text search across title, subtitle, ISBN, contributor names and
-     * publisher, ignoring case.
+     * Free-text search across title, subtitle, ISBN, contributor names,
+     * publisher and custom field values, ignoring case.
      *
      * @param text what to look for; blank returns every item
      * @return the matching items, possibly empty, never null

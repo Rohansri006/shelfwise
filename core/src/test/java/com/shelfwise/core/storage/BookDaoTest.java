@@ -193,6 +193,23 @@ class BookDaoTest {
     }
 
     @Test
+    @DisplayName("one field set under two spellings saves as one field")
+    void customFieldCaseSaves() throws Exception {
+        // Before D30 the model kept "Signed" and "signed" apart while the
+        // NOCASE primary key treated them as one, so this save failed.
+        Book book = new Book("Dune");
+        book.setCustomField("Signed", "yes");
+        book.setCustomField("signed", "by the author");
+        List<Book> books = new ArrayList<>();
+        books.add(book);
+
+        Book back = roundTrip(books).get(0);
+
+        assertEquals(1, back.getCustomFields().size());
+        assertEquals("by the author", back.getCustomField("Signed"));
+    }
+
+    @Test
     @DisplayName("a stored status survives even when the sessions would imply another")
     void storedStatusWinsOverSessions() throws Exception {
         // Read once, then abandoned on a re-read. If sessions were added

@@ -1365,6 +1365,15 @@ public class CollectionManager implements Searchable {
         if (containsIgnoreCase(item.getTitle(), query)) {
             return true;
         }
+        // Custom field values (D30): "Signed: yes", "Gift from: Asha".
+        // Names are not searched, only values - searching "signed" should
+        // not match every item that has the field.
+        List<String> values = new ArrayList<>(item.getCustomFields().values());
+        for (int i = 0; i < values.size(); i++) {
+            if (containsIgnoreCase(values.get(i), query)) {
+                return true;
+            }
+        }
         if (!(item instanceof Book)) {
             return false;
         }

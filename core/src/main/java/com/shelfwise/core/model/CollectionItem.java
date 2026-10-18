@@ -239,6 +239,11 @@ public abstract class CollectionItem {
 
     /**
      * Sets a user-defined field, replacing any previous value for that key.
+     * <p>
+     * Field names ignore case: "Signed" and "signed" are one field, as they
+     * are in the database. Setting "signed" when "Signed" exists replaces
+     * it, takes the new spelling, and keeps the field in its original
+     * position - fields are shown in the order they were first added.
      *
      * @param key   the field name; must not be blank
      * @param value the value; may be null or empty
@@ -248,23 +253,70 @@ public abstract class CollectionItem {
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalArgumentException("Custom field name must not be blank.");
         }
-        customFields.put(key.trim(), value);
+        String newKey = key.trim();
+        String oldKey = findCustomFieldKey(newKey);
+        if (oldKey == null || oldKey.equals(newKey)) {
+            // New field, or the same spelling: put keeps an existing key's
+            // position in a LinkedHashMap.
+            customFields.put(newKey, value);
+            return;
+        }
+        // Same field, new spelling. A LinkedHashMap cannot rename a key in
+        // place, so rebuild it in the same order with the key swapped.
+        List<String> keys = new ArrayList<>(customFields.keySet());
+        List<String> values = new ArrayList<>(customFields.values());
+        customFields.clear();
+        for (int i = 0; i < keys.size(); i++) {
+            if (keys.get(i).equals(oldKey)) {
+                customFields.put(newKey, value);
+            } else {
+                customFields.put(keys.get(i), values.get(i));
+            }
+        }
     }
 
     /**
-     * @param key the field name
+     * @param key the field name, in any case
      * @return the stored value, or null if that field is not set
      */
     public String getCustomField(String key) {
-        return customFields.get(key);
+        String stored = findCustomFieldKey(key);
+        return stored == null ? null : customFields.get(stored);
     }
 
     /**
-     * @param key the field name
+     * @param key the field name, in any case
      * @return true if a field with that name existed and was removed
      */
     public boolean removeCustomField(String key) {
-        return customFields.remove(key) != null;
+        String stored = findCustomFieldKey(key);
+        if (stored == null) {
+            return false;
+        }
+        customFields.remove(stored);
+        return true;
+    }
+
+    /**
+     * Finds the stored spelling of a field name, ignoring case. A walk over
+     * the keys rather than a map lookup, because a {@code HashMap} compares
+     * keys exactly; an item has only a handful of fields.
+     *
+     * @param key the name to look for; may be null
+     * @return the key as stored, or null if there is no such field
+     */
+    private String findCustomFieldKey(String key) {
+        if (key == null) {
+            return null;
+        }
+        String wanted = key.trim();
+        List<String> keys = new ArrayList<>(customFields.keySet());
+        for (int i = 0; i < keys.size(); i++) {
+            if (keys.get(i).equalsIgnoreCase(wanted)) {
+                return keys.get(i);
+            }
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------
