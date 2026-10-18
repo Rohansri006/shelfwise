@@ -45,6 +45,24 @@ class ShelfWiseExceptionTest {
         assertTrue(ShelfWiseException.class.isAssignableFrom(LocationNotEmptyException.class));
         assertTrue(ShelfWiseException.class.isAssignableFrom(MetadataFetchException.class));
         assertTrue(ShelfWiseException.class.isAssignableFrom(SyncConflictException.class));
+        assertTrue(ShelfWiseException.class.isAssignableFrom(ScannerException.class));
+    }
+
+    @Test
+    @DisplayName("ScannerException names the camera when known, and keeps any cause")
+    void scannerKeepsDetails() {
+        IOException cause = new IOException("device busy");
+        ScannerException e =
+                new ScannerException("FaceTime HD Camera", "it is in use by another app", cause);
+        assertEquals("FaceTime HD Camera", e.getDeviceName());
+        assertEquals("it is in use by another app", e.getReason());
+        assertSame(cause, e.getCause());
+        assertEquals("The camera \"FaceTime HD Camera\" could not be used:"
+                + " it is in use by another app.", e.getMessage());
+
+        // No camera at all: the message must still read as a sentence.
+        ScannerException none = new ScannerException(null, "no camera was found");
+        assertEquals("The scanner could not be used: no camera was found.", none.getMessage());
     }
 
     @Test
