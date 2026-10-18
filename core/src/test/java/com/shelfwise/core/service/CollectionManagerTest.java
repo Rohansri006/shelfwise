@@ -215,6 +215,25 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("once a book is deleted for good, its ISBN can be added again")
+    void isbnFreedByDeletion() throws Exception {
+        // Guards the ISBN index: if deletion left the ISBN in it, the
+        // duplicate check would refuse a book that no longer exists.
+        CollectionManager m = new CollectionManager();
+        Book first = m.addItem(DUNE_ISBN, "Dune");
+        m.moveToTrash(first.getId());
+        m.deletePermanently(first.getId());
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+
+        Book second = m.addItem(DUNE_ISBN, "Dune");
+        m.moveToTrash(second.getId());
+        m.emptyTrash();
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+
+        assertSame(m.addItem(DUNE_ISBN, "Dune"), m.findBookByIsbn(DUNE_ISBN));
+    }
+
+    @Test
     @DisplayName("trash operations on an unknown id are refused")
     void trashUnknownId() {
         final CollectionManager m = new CollectionManager();
@@ -232,9 +251,9 @@ class CollectionManagerTest {
 
     @Test
     @DisplayName("a snapshot rebuilt into a new manager holds the same collection")
-    void snapshotRoundTrip() throws DuplicateItemException {
+    void snapshotRoundTrip() throws Exception {
         CollectionManager original = new CollectionManager();
-        Book live = original.addItem("Dune");
+        Book live = original.addItem(DUNE_ISBN, "Dune");
         Book trashed = original.addItem("Neuromancer");
         original.moveToTrash(trashed.getId());
 
@@ -245,6 +264,8 @@ class CollectionManagerTest {
         assertEquals(2, data.getBooks().size());
         assertNotNull(data.getSavedAt());
         assertSame(live, reloaded.findItemById(live.getId()));
+        // Loading rebuilds the ISBN index too, not only the id map.
+        assertSame(live, reloaded.findBookByIsbn(DUNE_ISBN));
         assertEquals(1, reloaded.getTrash().size());
     }
 

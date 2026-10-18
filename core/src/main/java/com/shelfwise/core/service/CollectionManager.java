@@ -50,6 +50,15 @@ public class CollectionManager implements Searchable {
     /** Every item, trashed ones included, keyed by id. */
     private final Map<String, CollectionItem> itemsById;
 
+    /**
+     * Every book that has an ISBN, trashed ones included, keyed by its
+     * ISBN-13. A second index over the same books as {@link #itemsById}: it
+     * turns the duplicate check on every add and every scan into one
+     * {@code get} instead of a walk through the whole collection. It must be
+     * kept in step wherever a book arrives, leaves or changes ISBN.
+     */
+    private final Map<String, Book> booksByIsbn;
+
     /** Every category node at any depth, keyed by id. */
     private final Map<String, Category> categoriesById;
 
@@ -65,6 +74,7 @@ public class CollectionManager implements Searchable {
     /** Creates an empty collection - the state on first run. */
     public CollectionManager() {
         this.itemsById = new HashMap<>();
+        this.booksByIsbn = new HashMap<>();
         this.categoriesById = new HashMap<>();
         this.locationsById = new HashMap<>();
         this.seriesById = new HashMap<>();
@@ -91,6 +101,7 @@ public class CollectionManager implements Searchable {
         for (int i = 0; i < data.getBooks().size(); i++) {
             Book book = data.getBooks().get(i);
             itemsById.put(book.getId(), book);
+            indexIsbn(book);
         }
         for (int i = 0; i < data.getCategories().size(); i++) {
             Category category = data.getCategories().get(i);
@@ -150,6 +161,37 @@ public class CollectionManager implements Searchable {
             }
         }
         itemsById.put(item.getId(), item);
+        indexIsbn(item);
+    }
+
+    /**
+     * Records a book in the ISBN index, if it is a book with an ISBN.
+     *
+     * @param item the item just added or loaded
+     */
+    private void indexIsbn(CollectionItem item) {
+        if (item instanceof Book) {
+            Book book = (Book) item;
+            if (book.hasIsbn()) {
+                booksByIsbn.put(book.getIsbn(), book);
+            }
+        }
+    }
+
+    /**
+     * Removes an item from both indexes - the one place that does, so the
+     * two maps cannot drift apart when items are deleted.
+     *
+     * @param item the item to forget
+     */
+    private void forgetItem(CollectionItem item) {
+        itemsById.remove(item.getId());
+        if (item instanceof Book) {
+            Book book = (Book) item;
+            if (book.hasIsbn()) {
+                booksByIsbn.remove(book.getIsbn());
+            }
+        }
     }
 
     /**
@@ -214,16 +256,8 @@ public class CollectionManager implements Searchable {
             // stored ISBN passed validation.
             return null;
         }
-        List<CollectionItem> all = allItems();
-        for (int i = 0; i < all.size(); i++) {
-            if (all.get(i) instanceof Book) {
-                Book book = (Book) all.get(i);
-                if (wanted.equals(book.getIsbn())) {
-                    return book;
-                }
-            }
-        }
-        return null;
+        // One HashMap lookup, however large the collection.
+        return booksByIsbn.get(wanted);
     }
 
     /**
@@ -278,7 +312,7 @@ public class CollectionManager implements Searchable {
             throw new IllegalArgumentException(
                     "\"" + item.getTitle() + "\" must be moved to the trash before it can be deleted.");
         }
-        itemsById.remove(id);
+        forgetItem(item);
     }
 
     /**
@@ -289,7 +323,7 @@ public class CollectionManager implements Searchable {
     public int emptyTrash() {
         List<CollectionItem> trash = getTrash();
         for (int i = 0; i < trash.size(); i++) {
-            itemsById.remove(trash.get(i).getId());
+            forgetItem(trash.get(i));
         }
         return trash.size();
     }
