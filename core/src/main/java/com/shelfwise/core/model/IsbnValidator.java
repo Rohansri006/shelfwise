@@ -74,6 +74,50 @@ public final class IsbnValidator {
     }
 
     /**
+     * Validates an ISBN and returns it in its 13-digit form.
+     * <p>
+     * One book can carry two ISBNs: 0143031058 and 9780143031055 are the same
+     * book. Every ISBN-10 has an ISBN-13 twin made by putting "978" in front
+     * of its first nine digits and working out a new check digit, because the
+     * two schemes calculate check digits differently. Converting everything
+     * to 13 digits means one book has one key, however it was typed.
+     *
+     * @param raw the ISBN as entered, 10 or 13 digits, hyphens allowed
+     * @return the validated ISBN-13
+     * @throws InvalidISBNException if it is not a valid ISBN
+     */
+    public static String toIsbn13(String raw) throws InvalidISBNException {
+        String isbn = validate(raw);
+        if (isbn.length() == 13) {
+            return isbn;
+        }
+        String twelve = "978" + isbn.substring(0, 9);
+        return twelve + isbn13CheckDigit(twelve);
+    }
+
+    /**
+     * Works out the ISBN-13 check digit for the first twelve digits: weight
+     * them alternately 1 and 3, then pick the digit that brings the total up
+     * to a multiple of ten.
+     *
+     * @param twelve the first twelve digits
+     * @return the thirteenth digit
+     */
+    private static char isbn13CheckDigit(String twelve) {
+        int total = 0;
+        for (int i = 0; i < 12; i++) {
+            int value = twelve.charAt(i) - '0';
+            if (i % 2 == 0) {
+                total += value;
+            } else {
+                total += value * 3;
+            }
+        }
+        // (10 - 0) % 10 is 0, so a total already divisible by ten gives '0'.
+        return (char) ('0' + (10 - total % 10) % 10);
+    }
+
+    /**
      * Whether a string is a valid ISBN, without throwing.
      * <p>
      * Convenient where invalid input is expected rather than exceptional -

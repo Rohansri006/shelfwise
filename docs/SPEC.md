@@ -244,6 +244,8 @@ for (int i = 0; i < providers.size(); i++) {
 }
 ```
 
+**Lookups, as built** *(added 17 Oct; decisions L1–L15)*. Package `metadata`: an abstract `HttpJsonProvider` (template method: `download` → `parse`, `HttpURLConnection`, 5 s timeouts) with `OpenLibraryProvider` and `GoogleBooksProvider` as subclasses. `MetadataLookup` runs the loop above with two refinements. First, the first source that finds the book gives the base, and the next source only **fills empty fields** (authors, publisher, year, pages, language), never replacing a value. Second, a failing gap-filler is a partial success, not an error. Results are cached per ISBN-13 by `MetadataCache` (JSON files, forever, failures never cached) and returned as a `LookupResult` (details, sources used, sources unavailable). `LookupResult.toBook()` is the user's acceptance. Facts: Open Library answers an unknown ISBN with `{}`, and Google Books **refuses keyless requests with HTTP 429** (shared quota), so the Google key is an optional setting stored in `settings.json`, never in the repository or the database.
+
 The same pattern recurs with `Exporter` (abstract) → `CsvExporter` / `JsonExporter`, with `User` → `GuestUser` / `LocalUser`, and with `CollectionItem` methods invoked through `List<CollectionItem>`.
 
 ---
