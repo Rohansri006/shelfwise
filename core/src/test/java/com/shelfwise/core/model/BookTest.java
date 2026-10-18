@@ -409,6 +409,53 @@ class BookTest {
         });
     }
 
+    @Test
+    @DisplayName("finishing an open session records the end date and marks the book finished")
+    void finishSessionMarksFinished() {
+        // The D13 gap: setting the end date on the session alone left the
+        // book at READING.
+        Book book = new Book("Dune");
+        ReadingSession session = new ReadingSession(LocalDate.of(2026, 1, 1));
+        book.addReadingSession(session);
+        assertEquals(ReadingStatus.READING, book.getReadingStatus());
+
+        book.finishReadingSession(session, LocalDate.of(2026, 2, 1));
+
+        assertEquals(LocalDate.of(2026, 2, 1), session.getEndDate());
+        assertEquals(ReadingStatus.FINISHED, book.getReadingStatus());
+        assertEquals(1, book.getTimesRead());
+    }
+
+    @Test
+    @DisplayName("finishing is refused for a bad date or another book's session, leaving the status alone")
+    void finishSessionRefusals() {
+        final Book book = new Book("Dune");
+        final ReadingSession session = new ReadingSession(LocalDate.of(2026, 3, 1));
+        book.addReadingSession(session);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                book.finishReadingSession(session, LocalDate.of(2026, 1, 1));
+            }
+        });
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                book.finishReadingSession(session, null);
+            }
+        });
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                book.finishReadingSession(new ReadingSession(LocalDate.of(2026, 3, 1)),
+                        LocalDate.of(2026, 4, 1));
+            }
+        });
+        assertNull(session.getEndDate());
+        assertEquals(ReadingStatus.READING, book.getReadingStatus());
+    }
+
     // -----------------------------------------------------------------
     // equals, hashCode and polymorphism
     // -----------------------------------------------------------------
