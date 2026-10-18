@@ -168,7 +168,10 @@ public class Wishlist {
      * escapes before anything has changed, so the entry stays on the list
      * for the user to correct. Removing first would lose the entry on a typo.
      * <p>
-     * Saving the returned book is the service layer's job, not this class's.
+     * Adding the returned book to the collection is the service layer's
+     * job, not this class's. Screens should call
+     * {@code CollectionManager.markAsBought}, which also refuses a duplicate
+     * <em>before</em> this method removes the entry.
      *
      * @param entry the entry that was bought; must be in this list
      * @return a new book carrying across the entry's title, ISBN and author

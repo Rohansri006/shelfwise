@@ -14,10 +14,12 @@ import com.shelfwise.core.model.Location;
 import com.shelfwise.core.model.ReadingStatus;
 import com.shelfwise.core.model.Series;
 import com.shelfwise.core.model.Wishlist;
+import com.shelfwise.core.model.WishlistEntry;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,8 +49,37 @@ import java.util.Set;
  */
 public class CollectionManager implements Searchable {
 
+    /**
+     * Orders items by title A to Z, ignoring case, so "dune" sits next to
+     * "Dune" rather than after every capitalised title. An anonymous class
+     * implementing {@link Comparator}: {@code compare} returns a negative
+     * number, zero or a positive number for "before", "same" and "after".
+     * Two books with the same title fall back to their ids, so the order
+     * never changes between calls even though the {@code HashMap} behind
+     * it has no order of its own.
+     */
+    private static final Comparator<CollectionItem> BY_TITLE = new Comparator<CollectionItem>() {
+        @Override
+        public int compare(CollectionItem a, CollectionItem b) {
+            int byTitle = String.CASE_INSENSITIVE_ORDER.compare(a.getTitle(), b.getTitle());
+            if (byTitle != 0) {
+                return byTitle;
+            }
+            return a.getId().compareTo(b.getId());
+        }
+    };
+
     /** Every item, trashed ones included, keyed by id. */
     private final Map<String, CollectionItem> itemsById;
+
+    /**
+     * Every book that has an ISBN, trashed ones included, keyed by its
+     * ISBN-13. A second index over the same books as {@link #itemsById}: it
+     * turns the duplicate check on every add and every scan into one
+     * {@code get} instead of a walk through the whole collection. It must be
+     * kept in step wherever a book arrives, leaves or changes ISBN.
+     */
+    private final Map<String, Book> booksByIsbn;
 
     /** Every category node at any depth, keyed by id. */
     private final Map<String, Category> categoriesById;
@@ -65,6 +96,7 @@ public class CollectionManager implements Searchable {
     /** Creates an empty collection - the state on first run. */
     public CollectionManager() {
         this.itemsById = new HashMap<>();
+        this.booksByIsbn = new HashMap<>();
         this.categoriesById = new HashMap<>();
         this.locationsById = new HashMap<>();
         this.seriesById = new HashMap<>();
@@ -91,6 +123,7 @@ public class CollectionManager implements Searchable {
         for (int i = 0; i < data.getBooks().size(); i++) {
             Book book = data.getBooks().get(i);
             itemsById.put(book.getId(), book);
+            indexIsbn(book);
         }
         for (int i = 0; i < data.getCategories().size(); i++) {
             Category category = data.getCategories().get(i);
@@ -150,6 +183,37 @@ public class CollectionManager implements Searchable {
             }
         }
         itemsById.put(item.getId(), item);
+        indexIsbn(item);
+    }
+
+    /**
+     * Records a book in the ISBN index, if it is a book with an ISBN.
+     *
+     * @param item the item just added or loaded
+     */
+    private void indexIsbn(CollectionItem item) {
+        if (item instanceof Book) {
+            Book book = (Book) item;
+            if (book.hasIsbn()) {
+                booksByIsbn.put(book.getIsbn(), book);
+            }
+        }
+    }
+
+    /**
+     * Removes an item from both indexes - the one place that does, so the
+     * two maps cannot drift apart when items are deleted.
+     *
+     * @param item the item to forget
+     */
+    private void forgetItem(CollectionItem item) {
+        itemsById.remove(item.getId());
+        if (item instanceof Book) {
+            Book book = (Book) item;
+            if (book.hasIsbn()) {
+                booksByIsbn.remove(book.getIsbn());
+            }
+        }
     }
 
     /**
@@ -197,32 +261,29 @@ public class CollectionManager implements Searchable {
     }
 
     /**
-     * Finds a book by ISBN, in either written form: "978-0-14-303105-5"
-     * finds a book stored as "9780143031055".
+     * Finds a book by ISBN, in any written form: "978-0-14-303105-5" and the
+     * ISBN-10 "0143031058" both find a book stored as "9780143031055".
      *
      * @param isbn the ISBN to look for
      * @return the book, trashed or not, or null if there is none
      */
     public Book findBookByIsbn(String isbn) {
-        String wanted = IsbnValidator.normalise(isbn);
-        if (wanted == null || wanted.isEmpty()) {
+        // Books store ISBN-13 (see Book.setIsbn), so the search key must be
+        // converted the same way before comparing.
+        String wanted;
+        try {
+            wanted = IsbnValidator.toIsbn13(isbn);
+        } catch (InvalidISBNException e) {
+            // Blank or invalid: no stored book can have it, since every
+            // stored ISBN passed validation.
             return null;
         }
-        List<CollectionItem> all = allItems();
-        for (int i = 0; i < all.size(); i++) {
-            if (all.get(i) instanceof Book) {
-                Book book = (Book) all.get(i);
-                if (wanted.equals(book.getIsbn())) {
-                    return book;
-                }
-            }
-        }
-        return null;
+        // One HashMap lookup, however large the collection.
+        return booksByIsbn.get(wanted);
     }
 
     /**
-     * Items not in the trash, in no particular order - a {@code HashMap}
-     * keeps none, so screens sort the list themselves.
+     * Items not in the trash, sorted by title A to Z, ignoring case.
      *
      * @return a new list of live items
      */
@@ -230,7 +291,7 @@ public class CollectionManager implements Searchable {
         return itemsWithDeleted(false);
     }
 
-    /** @return a new list of the items in the trash */
+    /** @return a new list of the items in the trash, sorted by title */
     public List<CollectionItem> getTrash() {
         return itemsWithDeleted(true);
     }
@@ -272,7 +333,7 @@ public class CollectionManager implements Searchable {
             throw new IllegalArgumentException(
                     "\"" + item.getTitle() + "\" must be moved to the trash before it can be deleted.");
         }
-        itemsById.remove(id);
+        forgetItem(item);
     }
 
     /**
@@ -283,7 +344,7 @@ public class CollectionManager implements Searchable {
     public int emptyTrash() {
         List<CollectionItem> trash = getTrash();
         for (int i = 0; i < trash.size(); i++) {
-            itemsById.remove(trash.get(i).getId());
+            forgetItem(trash.get(i));
         }
         return trash.size();
     }
@@ -764,6 +825,416 @@ public class CollectionManager implements Searchable {
         return wishlists.remove(wishlist);
     }
 
+    /**
+     * Turns a wishlist entry into a book in the collection: what the "Mark
+     * as Bought" button does.
+     * <p>
+     * The order is what keeps the entry safe. {@link Wishlist#markAsBought}
+     * removes the entry, so everything that could still fail is checked
+     * before it is called: first whether the collection already has a book
+     * with this ISBN, then (inside {@code Wishlist.markAsBought}) whether the
+     * ISBN is valid at all. Only when both pass is the entry removed and the
+     * book added. Calling {@code Wishlist.markAsBought} and then
+     * {@link #addItem} the other way round lost the entry whenever the book
+     * turned out to be a duplicate.
+     *
+     * @param wishlist a wishlist in this collection
+     * @param entry    the entry that was bought; must be on that wishlist
+     * @return the new book, already added to the collection
+     * @throws DuplicateItemException   if a book with the entry's ISBN is
+     *                                  already in the collection; the entry
+     *                                  stays on the list
+     * @throws InvalidISBNException     if the entry's ISBN is unusable; the
+     *                                  entry stays on the list
+     * @throws IllegalArgumentException if the wishlist is not in this
+     *                                  collection or the entry not on it
+     */
+    public Book markAsBought(Wishlist wishlist, WishlistEntry entry)
+            throws DuplicateItemException, InvalidISBNException {
+        if (wishlist == null || !wishlists.contains(wishlist)) {
+            throw new IllegalArgumentException("That wishlist is not in this collection.");
+        }
+        // A null or unknown entry gets through here and is refused by
+        // Wishlist.markAsBought below, before anything changes.
+        Book existing = findBookByIsbn(entry == null ? null : entry.getIsbn());
+        if (existing != null) {
+            throw new DuplicateItemException(
+                    existing.getIsbn(), existing.getId(), existing.getTitle());
+        }
+        Book book = wishlist.markAsBought(entry);
+        addItem(book);
+        return book;
+    }
+
+    // ------------------------------------------------------------------
+    // Edits that span the collection (ADR 0006)
+    //
+    // Each model setter checks only its own object: Book.setIsbn cannot
+    // see the other books, Category.setName cannot see its siblings. The
+    // rules that need the whole collection - unique ISBNs and names, and
+    // references to things that exist - are checked here, before anything
+    // changes, so the screens should make these edits through the manager.
+    // checkIntegrity() is the safety net for an edit that did not.
+    // ------------------------------------------------------------------
+
+    /**
+     * Changes a book's ISBN, refusing one that another book already has.
+     * <p>
+     * Also moves the book to its new key in the ISBN index - something
+     * calling {@link Book#setIsbn} directly would not do.
+     *
+     * @param book    a book in this collection
+     * @param newIsbn the new ISBN, 10 or 13 digits; null or blank clears it
+     * @throws InvalidISBNException     if present but not a valid ISBN
+     * @throws DuplicateItemException   if another book, trashed or not, has it
+     * @throws IllegalArgumentException if the book is not in this collection
+     */
+    public void changeIsbn(Book book, String newIsbn)
+            throws InvalidISBNException, DuplicateItemException {
+        requireKnownItem(book);
+        String canonical = null;
+        if (newIsbn != null && !newIsbn.trim().isEmpty()) {
+            // Converted first so the duplicate check compares like with like.
+            canonical = IsbnValidator.toIsbn13(newIsbn);
+            Book existing = booksByIsbn.get(canonical);
+            if (existing != null && existing != book) {
+                throw new DuplicateItemException(
+                        canonical, existing.getId(), existing.getTitle());
+            }
+        }
+        if (book.hasIsbn()) {
+            booksByIsbn.remove(book.getIsbn());
+        }
+        book.setIsbn(canonical);
+        indexIsbn(book);
+    }
+
+    /**
+     * Renames a category, refusing a name a sibling already has. For a
+     * top-level category the siblings are the other top-level categories.
+     *
+     * @param category an existing category
+     * @param newName  the new name; must not be blank
+     * @throws IllegalArgumentException if the category is not known, the
+     *                                  name is blank, or a sibling has it
+     */
+    public void renameCategory(Category category, String newName) {
+        requireKnownCategory(category);
+        requireNotBlank(newName, "Category name");
+        if (category.isRoot()) {
+            requireUniqueRootCategoryName(newName, category);
+        } else {
+            Category clash = category.getParent().findChildByName(newName);
+            if (clash != null && clash != category) {
+                throw new IllegalArgumentException("\"" + category.getParent().getName()
+                        + "\" already has a sub-category called \"" + clash.getName() + "\".");
+            }
+        }
+        category.setName(newName);
+    }
+
+    /**
+     * Renames a location, refusing a name a sibling already has - two
+     * shelves in one room cannot both be "Shelf A", but every shelf may
+     * have its own "Row 1".
+     *
+     * @param location an existing location
+     * @param newName  the new name; must not be blank
+     * @throws IllegalArgumentException if the location is not known, the
+     *                                  name is blank, or a sibling has it
+     */
+    public void renameLocation(Location location, String newName) {
+        requireKnownLocation(location);
+        requireNotBlank(newName, "Location name");
+        if (location.isRoot()) {
+            requireUniqueRootLocationName(newName, location);
+        } else {
+            Location clash = location.getParent().findChildByName(newName);
+            if (clash != null && clash != location) {
+                throw new IllegalArgumentException("\"" + location.getParent().getName()
+                        + "\" already has a place called \"" + clash.getName() + "\".");
+            }
+        }
+        location.setName(newName);
+    }
+
+    /**
+     * Renames a series, refusing a name another series already has.
+     *
+     * @param series  an existing series
+     * @param newName the new name; must not be blank
+     * @throws IllegalArgumentException if the series is not known, the name
+     *                                  is blank, or another series has it
+     */
+    public void renameSeries(Series series, String newName) {
+        if (series == null || !seriesById.containsKey(series.getId())) {
+            throw new IllegalArgumentException("That series is not in this collection.");
+        }
+        requireNotBlank(newName, "Series name");
+        List<Series> all = getSeries();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i) != series && all.get(i).getName().equalsIgnoreCase(newName.trim())) {
+                throw new IllegalArgumentException(
+                        "A series called \"" + all.get(i).getName() + "\" already exists.");
+            }
+        }
+        series.setName(newName);
+    }
+
+    /**
+     * Renames a wishlist, refusing a name another wishlist already has.
+     *
+     * @param wishlist an existing wishlist
+     * @param newName  the new name; must not be blank
+     * @throws IllegalArgumentException if the wishlist is not known, the
+     *                                  name is blank, or another has it
+     */
+    public void renameWishlist(Wishlist wishlist, String newName) {
+        if (wishlist == null || !wishlists.contains(wishlist)) {
+            throw new IllegalArgumentException("That wishlist is not in this collection.");
+        }
+        requireNotBlank(newName, "Wishlist name");
+        for (int i = 0; i < wishlists.size(); i++) {
+            Wishlist other = wishlists.get(i);
+            if (other != wishlist && other.getName().equalsIgnoreCase(newName.trim())) {
+                throw new IllegalArgumentException(
+                        "A wishlist called \"" + other.getName() + "\" already exists.");
+            }
+        }
+        wishlist.setName(newName);
+    }
+
+    /**
+     * Puts a copy in a location, or takes it off the shelves.
+     *
+     * @param copy     the copy to move; must not be null
+     * @param location a location in this collection, or null for unshelved
+     * @throws IllegalArgumentException if the copy is null or the location
+     *                                  is not in this collection
+     */
+    public void setLocation(Copy copy, Location location) {
+        if (copy == null) {
+            throw new IllegalArgumentException("Copy must not be null.");
+        }
+        if (location == null) {
+            copy.setLocationId(null);
+            return;
+        }
+        requireKnownLocation(location);
+        copy.setLocationId(location.getId());
+    }
+
+    /**
+     * Files an item under a category. Filing it under the same category
+     * twice changes nothing.
+     *
+     * @param item     an item in this collection
+     * @param category a category in this collection
+     * @throws IllegalArgumentException if either is not in this collection
+     */
+    public void fileUnder(CollectionItem item, Category category) {
+        requireKnownItem(item);
+        requireKnownCategory(category);
+        item.addCategoryId(category.getId());
+    }
+
+    /**
+     * Puts a book in a series, or takes it out of one.
+     *
+     * @param book   a book in this collection
+     * @param series a series in this collection, or null to take the book
+     *               out (which also clears its position)
+     * @throws IllegalArgumentException if either is not in this collection
+     */
+    public void setSeries(Book book, Series series) {
+        requireKnownItem(book);
+        if (series == null) {
+            book.setSeriesId(null);
+            return;
+        }
+        if (!seriesById.containsKey(series.getId())) {
+            throw new IllegalArgumentException("That series is not in this collection.");
+        }
+        book.setSeriesId(series.getId());
+    }
+
+    // ------------------------------------------------------------------
+    // Integrity check - the safety net behind the edit methods above
+    // ------------------------------------------------------------------
+
+    /**
+     * Lists every way the collection breaks a rule the database enforces.
+     * <p>
+     * The edit methods above keep these rules, but the model setters are
+     * still public, so a screen could change an object directly. Saving
+     * rewrites everything in one transaction, so a single broken rule
+     * would make the database refuse that save and every save after it.
+     * Checking here first, in memory, turns that into one clear list of
+     * problems instead. Names are compared ignoring case, the same way the
+     * edit methods compare them.
+     *
+     * @return a description of each problem; empty if there are none
+     */
+    public List<String> checkIntegrity() {
+        List<String> problems = new ArrayList<>();
+        checkIsbns(problems);
+        checkCategoryNames(problems);
+        checkLocationNames(problems);
+        checkReferences(problems);
+
+        List<String> seriesNames = new ArrayList<>();
+        List<Series> allSeries = getSeries();
+        for (int i = 0; i < allSeries.size(); i++) {
+            seriesNames.add(allSeries.get(i).getName());
+        }
+        reportDuplicateNames(seriesNames, "the series", problems);
+
+        List<String> wishlistNames = new ArrayList<>();
+        for (int i = 0; i < wishlists.size(); i++) {
+            wishlistNames.add(wishlists.get(i).getName());
+        }
+        reportDuplicateNames(wishlistNames, "the wishlists", problems);
+        return problems;
+    }
+
+    /**
+     * Unique ISBNs, trashed books included. Walks the books themselves
+     * rather than trusting the ISBN index, because a direct
+     * {@link Book#setIsbn} call changes the book without updating it.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkIsbns(List<String> problems) {
+        Map<String, Book> seen = new HashMap<>();
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i) instanceof Book) {
+                Book book = (Book) all.get(i);
+                if (!book.hasIsbn()) {
+                    continue;
+                }
+                Book earlier = seen.get(book.getIsbn());
+                if (earlier == null) {
+                    seen.put(book.getIsbn(), book);
+                } else {
+                    problems.add("Two books have ISBN " + book.getIsbn() + ": \""
+                            + earlier.getTitle() + "\" and \"" + book.getTitle() + "\".");
+                }
+            }
+        }
+    }
+
+    /**
+     * Unique names among the top-level categories, and among each
+     * category's children.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkCategoryNames(List<String> problems) {
+        List<String> rootNames = new ArrayList<>();
+        List<Category> roots = getRootCategories();
+        for (int i = 0; i < roots.size(); i++) {
+            rootNames.add(roots.get(i).getName());
+        }
+        reportDuplicateNames(rootNames, "the top-level categories", problems);
+
+        List<Category> all = new ArrayList<>(categoriesById.values());
+        for (int i = 0; i < all.size(); i++) {
+            List<Category> children = all.get(i).getChildren();
+            List<String> names = new ArrayList<>();
+            for (int j = 0; j < children.size(); j++) {
+                names.add(children.get(j).getName());
+            }
+            reportDuplicateNames(names, "category \"" + all.get(i).getPath() + "\"", problems);
+        }
+    }
+
+    /**
+     * Unique names among the top-level locations, and among each
+     * location's children.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkLocationNames(List<String> problems) {
+        List<String> rootNames = new ArrayList<>();
+        List<Location> roots = getRootLocations();
+        for (int i = 0; i < roots.size(); i++) {
+            rootNames.add(roots.get(i).getName());
+        }
+        reportDuplicateNames(rootNames, "the top-level locations", problems);
+
+        List<Location> all = new ArrayList<>(locationsById.values());
+        for (int i = 0; i < all.size(); i++) {
+            List<Location> children = all.get(i).getChildren();
+            List<String> names = new ArrayList<>();
+            for (int j = 0; j < children.size(); j++) {
+                names.add(children.get(j).getName());
+            }
+            reportDuplicateNames(names, "location \"" + all.get(i).getPath() + "\"", problems);
+        }
+    }
+
+    /**
+     * Every category, location and series an item points at must be in
+     * the collection - the database's foreign keys would refuse anything
+     * else.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkReferences(List<String> problems) {
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            CollectionItem item = all.get(i);
+            List<String> categoryIds = item.getCategoryIds();
+            for (int j = 0; j < categoryIds.size(); j++) {
+                if (!categoriesById.containsKey(categoryIds.get(j))) {
+                    problems.add("\"" + item.getTitle() + "\" is filed under a category that is"
+                            + " not in the collection (id " + categoryIds.get(j) + ").");
+                }
+            }
+            if (!(item instanceof Book)) {
+                continue;
+            }
+            Book book = (Book) item;
+            List<Copy> copies = book.getCopies();
+            for (int j = 0; j < copies.size(); j++) {
+                String locationId = copies.get(j).getLocationId();
+                if (locationId != null && !locationsById.containsKey(locationId)) {
+                    problems.add("A copy of \"" + book.getTitle() + "\" is in a location that is"
+                            + " not in the collection (id " + locationId + ").");
+                }
+            }
+            if (book.getSeriesId() != null && !seriesById.containsKey(book.getSeriesId())) {
+                problems.add("\"" + book.getTitle() + "\" belongs to a series that is"
+                        + " not in the collection (id " + book.getSeriesId() + ").");
+            }
+        }
+    }
+
+    /**
+     * Adds a problem for every name that repeats one before it, ignoring
+     * case. A {@link HashMap} keyed by the lower-cased name finds each
+     * repeat in one lookup.
+     *
+     * @param names    the names that must be unique
+     * @param where    how to describe the group, e.g. "the series"
+     * @param problems where to add what is found
+     */
+    private static void reportDuplicateNames(List<String> names, String where,
+                                             List<String> problems) {
+        Map<String, String> seen = new HashMap<>();
+        for (int i = 0; i < names.size(); i++) {
+            String key = names.get(i).trim().toLowerCase(Locale.ROOT);
+            String earlier = seen.get(key);
+            if (earlier == null) {
+                seen.put(key, names.get(i));
+            } else {
+                problems.add("Two names clash in " + where + ": \"" + earlier
+                        + "\" and \"" + names.get(i) + "\".");
+            }
+        }
+    }
+
     // ------------------------------------------------------------------
     // Searching - the four Searchable overloads
     // ------------------------------------------------------------------
@@ -772,7 +1243,9 @@ public class CollectionManager implements Searchable {
      * {@inheritDoc}
      * <p>
      * An ISBN typed with hyphens still matches, because the query is also
-     * compared in normalised form against the stored, normalised ISBN.
+     * compared in normalised form against the stored, normalised ISBN. A
+     * complete ISBN-10 matches too, because it is converted to the ISBN-13
+     * form that books store.
      */
     @Override
     public List<CollectionItem> search(String text) {
@@ -782,6 +1255,12 @@ public class CollectionManager implements Searchable {
         }
         String query = text.trim().toLowerCase(Locale.ROOT);
         String isbnQuery = IsbnValidator.normalise(text.trim());
+        try {
+            isbnQuery = IsbnValidator.toIsbn13(isbnQuery);
+        } catch (InvalidISBNException e) {
+            // Not a complete ISBN (a title word, or part of a number): keep
+            // it as typed so it still matches as a fragment.
+        }
 
         List<CollectionItem> result = new ArrayList<>();
         for (int i = 0; i < live.size(); i++) {
@@ -886,6 +1365,15 @@ public class CollectionManager implements Searchable {
         if (containsIgnoreCase(item.getTitle(), query)) {
             return true;
         }
+        // Custom field values (D30): "Signed: yes", "Gift from: Asha".
+        // Names are not searched, only values - searching "signed" should
+        // not match every item that has the field.
+        List<String> values = new ArrayList<>(item.getCustomFields().values());
+        for (int i = 0; i < values.size(); i++) {
+            if (containsIgnoreCase(values.get(i), query)) {
+                return true;
+            }
+        }
         if (!(item instanceof Book)) {
             return false;
         }
@@ -963,10 +1451,28 @@ public class CollectionManager implements Searchable {
      * the cast. The check is what makes the cast safe: if another item type
      * is ever added, it is skipped instead of crashing with a
      * {@code ClassCastException}.
+     * <p>
+     * Every save starts here, so this is where {@link #checkIntegrity()}
+     * runs. A problem means a bug - some edit bypassed the manager - so it
+     * is reported as an unchecked exception listing every problem, before
+     * the database sees any of them.
      *
      * @return the snapshot, stamped with the current time
+     * @throws IllegalStateException if the collection breaks a
+     *                               collection-wide rule
      */
     public CollectionData toCollectionData() {
+        List<String> problems = checkIntegrity();
+        if (!problems.isEmpty()) {
+            StringBuilder message = new StringBuilder("The collection cannot be saved: ");
+            message.append(problems.size());
+            message.append(problems.size() == 1 ? " problem was found." : " problems were found.");
+            for (int i = 0; i < problems.size(); i++) {
+                message.append("\n- ").append(problems.get(i));
+            }
+            throw new IllegalStateException(message.toString());
+        }
+
         List<Book> books = new ArrayList<>();
         List<CollectionItem> all = allItems();
         for (int i = 0; i < all.size(); i++) {
@@ -987,6 +1493,30 @@ public class CollectionManager implements Searchable {
     // ------------------------------------------------------------------
 
     /**
+     * @param item the item to check
+     * @throws IllegalArgumentException if null or not in this collection
+     */
+    private void requireKnownItem(CollectionItem item) {
+        if (item == null || itemsById.get(item.getId()) != item) {
+            throw new IllegalArgumentException("That item is not in this collection.");
+        }
+    }
+
+    /**
+     * Checked before any uniqueness test, so a blank name is reported as
+     * blank rather than compared against the other names.
+     *
+     * @param name what to check
+     * @param what how to describe it in the message, e.g. "Category name"
+     * @throws IllegalArgumentException if null or blank
+     */
+    private static void requireNotBlank(String name, String what) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException(what + " must not be blank.");
+        }
+    }
+
+    /**
      * Every item as a list, so it can be walked with an indexed loop like
      * the rest of the codebase. A {@code Map} has no index of its own.
      *
@@ -997,8 +1527,12 @@ public class CollectionManager implements Searchable {
     }
 
     /**
+     * Sorting here means every list the screens get - the live items, the
+     * trash and all four searches, which start from the live items - comes
+     * back in the same title order.
+     *
      * @param deleted true for the trash, false for live items
-     * @return a new list of the items in that state
+     * @return a new list of the items in that state, sorted by title
      */
     private List<CollectionItem> itemsWithDeleted(boolean deleted) {
         List<CollectionItem> result = new ArrayList<>();
@@ -1008,6 +1542,7 @@ public class CollectionManager implements Searchable {
                 result.add(all.get(i));
             }
         }
+        Collections.sort(result, BY_TITLE);
         return result;
     }
 

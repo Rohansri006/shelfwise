@@ -250,13 +250,17 @@ public class Book extends CollectionItem {
     }
 
     /**
-     * Validates and stores an ISBN.
+     * Validates an ISBN and stores it in its canonical 13-digit form.
      * <p>
-     * Hyphens and spaces are stripped first, so "978-0-14-303105-5" and
-     * "9780143031055" are treated as the same ISBN. Only the stripped form is
-     * stored, which is what makes duplicate detection reliable.
+     * Hyphens and spaces are stripped, and an ISBN-10 is converted to its
+     * ISBN-13 twin, so "0-14-303105-8", "978-0-14-303105-5" and
+     * "9780143031055" all store as "9780143031055". One book then has exactly
+     * one stored ISBN however it was typed or scanned, which is what makes
+     * duplicate detection reliable. The conversion happens here, in the
+     * setter, so every route in (constructor, edit form, import, database
+     * load) gets it without having to remember.
      *
-     * @param isbn the ISBN as entered; null or blank clears it
+     * @param isbn the ISBN as entered, 10 or 13 digits; null or blank clears it
      * @throws InvalidISBNException if present but not a valid ISBN
      */
     public void setIsbn(String isbn) throws InvalidISBNException {
@@ -264,7 +268,7 @@ public class Book extends CollectionItem {
             this.isbn = null;
             return;
         }
-        this.isbn = IsbnValidator.validate(isbn);
+        this.isbn = IsbnValidator.toIsbn13(isbn);
     }
 
     /** @return true if this book has an ISBN recorded */

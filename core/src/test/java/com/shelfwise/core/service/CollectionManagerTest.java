@@ -13,6 +13,7 @@ import com.shelfwise.core.model.Location;
 import com.shelfwise.core.model.ReadingStatus;
 import com.shelfwise.core.model.Series;
 import com.shelfwise.core.model.Wishlist;
+import com.shelfwise.core.model.WishlistEntry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -77,6 +78,25 @@ class CollectionManagerTest {
         // The id lets the screen offer "add a copy to the existing book".
         assertEquals(first.getId(), e.getExistingItemId());
         assertEquals(1, m.getItems().size());
+    }
+
+    @Test
+    @DisplayName("an ISBN-10 is refused when its ISBN-13 twin is already in the collection")
+    void isbn10DuplicateOfIsbn13Refused() throws Exception {
+        // The same edition printed with both barcodes: scanning the old
+        // ISBN-10 must not add a second book.
+        final CollectionManager m = new CollectionManager();
+        Book first = m.addItem(DUNE_ISBN, "Dune");
+
+        DuplicateItemException e = assertThrows(DuplicateItemException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.addItem("0143031058", "Dune (old barcode)");
+                    }
+                });
+        assertEquals(first.getId(), e.getExistingItemId());
+        assertSame(first, m.findBookByIsbn("0-14-303105-8"));
     }
 
     @Test
@@ -196,6 +216,25 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("once a book is deleted for good, its ISBN can be added again")
+    void isbnFreedByDeletion() throws Exception {
+        // Guards the ISBN index: if deletion left the ISBN in it, the
+        // duplicate check would refuse a book that no longer exists.
+        CollectionManager m = new CollectionManager();
+        Book first = m.addItem(DUNE_ISBN, "Dune");
+        m.moveToTrash(first.getId());
+        m.deletePermanently(first.getId());
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+
+        Book second = m.addItem(DUNE_ISBN, "Dune");
+        m.moveToTrash(second.getId());
+        m.emptyTrash();
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+
+        assertSame(m.addItem(DUNE_ISBN, "Dune"), m.findBookByIsbn(DUNE_ISBN));
+    }
+
+    @Test
     @DisplayName("trash operations on an unknown id are refused")
     void trashUnknownId() {
         final CollectionManager m = new CollectionManager();
@@ -213,9 +252,9 @@ class CollectionManagerTest {
 
     @Test
     @DisplayName("a snapshot rebuilt into a new manager holds the same collection")
-    void snapshotRoundTrip() throws DuplicateItemException {
+    void snapshotRoundTrip() throws Exception {
         CollectionManager original = new CollectionManager();
-        Book live = original.addItem("Dune");
+        Book live = original.addItem(DUNE_ISBN, "Dune");
         Book trashed = original.addItem("Neuromancer");
         original.moveToTrash(trashed.getId());
 
@@ -226,6 +265,8 @@ class CollectionManagerTest {
         assertEquals(2, data.getBooks().size());
         assertNotNull(data.getSavedAt());
         assertSame(live, reloaded.findItemById(live.getId()));
+        // Loading rebuilds the ISBN index too, not only the id map.
+        assertSame(live, reloaded.findBookByIsbn(DUNE_ISBN));
         assertEquals(1, reloaded.getTrash().size());
     }
 
@@ -294,6 +335,54 @@ class CollectionManagerTest {
         CollectionManager m = new CollectionManager();
         Book dune = m.addItem(DUNE_ISBN, "Dune");
         assertSame(dune, m.search("978-0-14").get(0));
+    }
+
+    @Test
+    @DisplayName("a complete ISBN-10 finds the book stored under its ISBN-13")
+    void textSearchIsbn10() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem(DUNE_ISBN, "Dune");
+        assertEquals(1, m.search("0-14-303105-8").size());
+        assertSame(dune, m.search("0143031058").get(0));
+    }
+
+    @Test
+    @DisplayName("items, trash and search results come back sorted by title, ignoring case")
+    void listsSortedByTitle() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        m.addItem("neuromancer");
+        m.addItem("Dune");
+        m.addItem("Anathem");
+        m.moveToTrash(m.addItem("Zorba the Greek").getId());
+        m.moveToTrash(m.addItem("brave new world").getId());
+
+        List<CollectionItem> live = m.getItems();
+        assertEquals("Anathem", live.get(0).getTitle());
+        assertEquals("Dune", live.get(1).getTitle());
+        // Lower case does not push it after the capitalised titles.
+        assertEquals("neuromancer", live.get(2).getTitle());
+
+        assertEquals("brave new world", m.getTrash().get(0).getTitle());
+        assertEquals("Zorba the Greek", m.getTrash().get(1).getTitle());
+
+        List<CollectionItem> found = m.search("n");
+        assertEquals("Anathem", found.get(0).getTitle());
+        assertEquals("Dune", found.get(1).getTitle());
+    }
+
+    @Test
+    @DisplayName("text search covers custom field values but not their names")
+    void textSearchCustomFieldValues() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem("Dune");
+        dune.setCustomField("Acquired at", "Daryaganj market");
+        Book other = m.addItem("Neuromancer");
+        other.setCustomField("Signed", "no");
+
+        assertSame(dune, m.search("daryaganj").get(0));
+        assertEquals(1, m.search("daryaganj").size());
+        // The field name alone finds nothing.
+        assertTrue(m.search("acquired").isEmpty());
     }
 
     @Test
@@ -652,5 +741,418 @@ class CollectionManagerTest {
         assertTrue(m.removeWishlist(birthday));
         assertTrue(m.getWishlists().isEmpty());
         assertTrue(m.toCollectionData().getWishlists().isEmpty());
+    }
+
+    @Test
+    @DisplayName("marking an entry as bought adds the book and removes the entry")
+    void markAsBoughtAddsBook() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        WishlistEntry entry = new WishlistEntry("Glimpses of World History");
+        entry.setIsbn("0-14-303105-8");
+        wishlist.addEntry(entry);
+
+        Book book = m.markAsBought(wishlist, entry);
+
+        assertSame(book, m.findBookByIsbn(DUNE_ISBN));
+        assertTrue(wishlist.isEmpty());
+    }
+
+    @Test
+    @DisplayName("a bought entry that duplicates a book already owned stays on the wishlist")
+    void markAsBoughtDuplicateKeepsEntry() throws Exception {
+        // The D35 bug: the entry used to be removed before the duplicate
+        // was discovered, so it vanished from the list without becoming a
+        // book.
+        final CollectionManager m = new CollectionManager();
+        Book owned = m.addItem(DUNE_ISBN, "Glimpses of World History");
+        final Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        final WishlistEntry entry = new WishlistEntry("Glimpses of World History");
+        // The ISBN-10 form: still recognised as the same book.
+        entry.setIsbn("0143031058");
+        wishlist.addEntry(entry);
+
+        DuplicateItemException e = assertThrows(DuplicateItemException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.markAsBought(wishlist, entry);
+                    }
+                });
+        assertEquals(owned.getId(), e.getExistingItemId());
+        assertEquals(1, wishlist.getEntryCount());
+        assertEquals(1, m.getItems().size());
+    }
+
+    @Test
+    @DisplayName("a bought entry with an invalid ISBN stays on the wishlist")
+    void markAsBoughtInvalidIsbnKeepsEntry() {
+        final CollectionManager m = new CollectionManager();
+        final Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        final WishlistEntry entry = new WishlistEntry("Dune");
+        entry.setIsbn("9780143031056");
+        wishlist.addEntry(entry);
+
+        assertThrows(InvalidISBNException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                m.markAsBought(wishlist, entry);
+            }
+        });
+        assertEquals(1, wishlist.getEntryCount());
+        assertTrue(m.getItems().isEmpty());
+    }
+
+    @Test
+    @DisplayName("marking as bought on a wishlist outside the collection is refused")
+    void markAsBoughtUnknownWishlist() {
+        final CollectionManager m = new CollectionManager();
+        final Wishlist stray = new Wishlist("Stray");
+        final WishlistEntry entry = new WishlistEntry("Dune");
+        stray.addEntry(entry);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                m.markAsBought(stray, entry);
+            }
+        });
+        assertEquals(1, stray.getEntryCount());
+    }
+
+    // ------------------------------------------------------------------
+    // Edits that span the collection (ADR 0006)
+    // ------------------------------------------------------------------
+
+    /** A second checksum-valid ISBN, for tests that need two books. */
+    private static final String SECOND_ISBN = "9780141187761";
+
+    @Test
+    @DisplayName("changeIsbn moves a book to its new ISBN and frees the old one")
+    void changeIsbnReindexes() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book book = m.addItem(DUNE_ISBN, "Dune");
+
+        // Given as an ISBN-10, stored as ISBN-13 like every other route in.
+        m.changeIsbn(book, "014118776X");
+
+        assertEquals(SECOND_ISBN, book.getIsbn());
+        assertSame(book, m.findBookByIsbn(SECOND_ISBN));
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+        // The old ISBN is free for another book now.
+        assertNotNull(m.addItem(DUNE_ISBN, "Glimpses of World History"));
+    }
+
+    @Test
+    @DisplayName("changeIsbn refuses another book's ISBN and leaves the book unchanged")
+    void changeIsbnRefusesDuplicate() throws Exception {
+        final CollectionManager m = new CollectionManager();
+        Book first = m.addItem(DUNE_ISBN, "Dune");
+        final Book second = m.addItem(SECOND_ISBN, "Nineteen Eighty-Four");
+
+        DuplicateItemException e = assertThrows(DuplicateItemException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.changeIsbn(second, DUNE_ISBN);
+                    }
+                });
+        assertEquals(first.getId(), e.getExistingItemId());
+        assertEquals(SECOND_ISBN, second.getIsbn());
+        assertSame(second, m.findBookByIsbn(SECOND_ISBN));
+    }
+
+    @Test
+    @DisplayName("changeIsbn accepts the book's own ISBN, and a blank clears it")
+    void changeIsbnOwnAndBlank() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book book = m.addItem(DUNE_ISBN, "Dune");
+
+        // Retyping the same ISBN with hyphens is not a duplicate of itself.
+        m.changeIsbn(book, "978-0-14-303105-5");
+        assertSame(book, m.findBookByIsbn(DUNE_ISBN));
+
+        m.changeIsbn(book, "  ");
+        assertNull(book.getIsbn());
+        assertNull(m.findBookByIsbn(DUNE_ISBN));
+    }
+
+    @Test
+    @DisplayName("renaming a category to a sibling's name is refused, ignoring case")
+    void renameCategoryClash() {
+        final CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        final Category reference = new Category("Reference");
+        final Category scifi = new Category("Science fiction");
+        final Category fantasy = new Category("Fantasy");
+        m.addCategory(fiction);
+        m.addCategory(reference);
+        m.addCategory(scifi, fiction);
+        m.addCategory(fantasy, fiction);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameCategory(fantasy, "science FICTION");
+            }
+        });
+        assertEquals("Fantasy", fantasy.getName());
+
+        // Top-level categories are siblings of each other.
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameCategory(reference, "fiction");
+            }
+        });
+
+        // A name used elsewhere in the tree is fine, and so is a change of
+        // case to the category's own name.
+        Category finance = new Category("Finance");
+        m.addCategory(finance, reference);
+        m.renameCategory(finance, "Fantasy");
+        m.renameCategory(scifi, "Science Fiction");
+        assertEquals("Science Fiction", scifi.getName());
+    }
+
+    @Test
+    @DisplayName("renaming a location to a sibling's name is refused, but every shelf may have a Row 1")
+    void renameLocationClash() {
+        final CollectionManager m = new CollectionManager();
+        Location bedroom = new Location("Bedroom");
+        Location shelfA = new Location("Shelf A");
+        final Location shelfB = new Location("Shelf B");
+        m.addLocation(bedroom);
+        m.addLocation(shelfA, bedroom);
+        m.addLocation(shelfB, bedroom);
+        Location rowA = new Location("Row 1");
+        Location rowB = new Location("Top");
+        m.addLocation(rowA, shelfA);
+        m.addLocation(rowB, shelfB);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameLocation(shelfB, "shelf a");
+            }
+        });
+        m.renameLocation(rowB, "Row 1");
+        assertEquals("Row 1", rowB.getName());
+    }
+
+    @Test
+    @DisplayName("renaming a series or wishlist to a name already taken is refused")
+    void renameSeriesAndWishlist() {
+        final CollectionManager m = new CollectionManager();
+        final Series dune = new Series("Dune Chronicles");
+        m.addSeries(dune);
+        m.addSeries(new Series("Discworld"));
+        final Wishlist birthday = new Wishlist("Birthday");
+        m.addWishlist(birthday);
+        m.addWishlist(new Wishlist("Rare finds"));
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameSeries(dune, "DISCWORLD");
+            }
+        });
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameWishlist(birthday, "rare finds");
+            }
+        });
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.renameWishlist(birthday, " ");
+            }
+        });
+
+        m.renameSeries(dune, "Dune");
+        m.renameWishlist(birthday, "Diwali");
+        assertEquals("Dune", dune.getName());
+        assertEquals("Diwali", birthday.getName());
+    }
+
+    @Test
+    @DisplayName("a copy can only be put in a location that is in the collection")
+    void setLocationRequiresKnownLocation() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        Location shelf = new Location("Shelf");
+        m.addLocation(shelf);
+        final Copy copy = m.addItem("Dune").getCopies().get(0);
+
+        m.setLocation(copy, shelf);
+        assertEquals(shelf.getId(), copy.getLocationId());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.setLocation(copy, new Location("Not added"));
+            }
+        });
+        assertEquals(shelf.getId(), copy.getLocationId());
+
+        m.setLocation(copy, null);
+        assertTrue(copy.isUnshelved());
+    }
+
+    @Test
+    @DisplayName("an item can only be filed under a category that is in the collection")
+    void fileUnderRequiresKnownCategory() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        final Category fiction = new Category("Fiction");
+        m.addCategory(fiction);
+        final Book dune = m.addItem("Dune");
+
+        m.fileUnder(dune, fiction);
+        m.fileUnder(dune, fiction);
+        assertEquals(1, dune.getCategoryIds().size());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.fileUnder(dune, new Category("Not added"));
+            }
+        });
+        // A book that was never added cannot be filed either.
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.fileUnder(new Book("Stray"), fiction);
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("a book can only join a series that is in the collection")
+    void setSeriesRequiresKnownSeries() throws DuplicateItemException {
+        final CollectionManager m = new CollectionManager();
+        Series discworld = new Series("Discworld");
+        m.addSeries(discworld);
+        final Book guards = m.addItem("Guards! Guards!");
+
+        m.setSeries(guards, discworld);
+        assertEquals(discworld.getId(), guards.getSeriesId());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.setSeries(guards, new Series("Not added"));
+            }
+        });
+        m.setSeries(guards, null);
+        assertNull(guards.getSeriesId());
+    }
+
+    // ------------------------------------------------------------------
+    // Integrity check
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a collection built through the manager has no integrity problems")
+    void cleanCollectionPasses() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        m.addCategory(fiction);
+        Location shelf = new Location("Shelf");
+        m.addLocation(shelf);
+        Series series = new Series("Dune Chronicles");
+        m.addSeries(series);
+        Book dune = m.addItem(DUNE_ISBN, "Dune");
+        m.fileUnder(dune, fiction);
+        m.setLocation(dune.getCopies().get(0), shelf);
+        m.setSeries(dune, series);
+
+        assertTrue(m.checkIntegrity().isEmpty());
+        assertNotNull(m.toCollectionData());
+    }
+
+    @Test
+    @DisplayName("an ISBN duplicated by bypassing the manager stops the save, with one problem named")
+    void bypassedDuplicateIsbnStopsSave() throws Exception {
+        // The exact slip ADR 0006 describes: a direct setter call the
+        // manager never saw. Without the check, the database would refuse
+        // this save and every one after it.
+        final CollectionManager m = new CollectionManager();
+        m.addItem(DUNE_ISBN, "Dune");
+        Book other = m.addItem(SECOND_ISBN, "Nineteen Eighty-Four");
+        other.setIsbn(DUNE_ISBN);
+
+        List<String> problems = m.checkIntegrity();
+        assertEquals(1, problems.size());
+        assertTrue(problems.get(0).contains(DUNE_ISBN));
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        m.toCollectionData();
+                    }
+                });
+        assertTrue(e.getMessage().contains("1 problem was found."));
+        assertTrue(e.getMessage().contains(DUNE_ISBN));
+    }
+
+    @Test
+    @DisplayName("every kind of bypassed rule is reported, all in one list")
+    void everyProblemListed() throws Exception {
+        final CollectionManager m = new CollectionManager();
+
+        // Two sibling categories, then two top-level ones, made to clash.
+        Category fiction = new Category("Fiction");
+        Category scifi = new Category("Science fiction");
+        Category fantasy = new Category("Fantasy");
+        m.addCategory(fiction);
+        m.addCategory(scifi, fiction);
+        m.addCategory(fantasy, fiction);
+        fantasy.setName("science FICTION");
+        Category reference = new Category("Reference");
+        m.addCategory(reference);
+        reference.setName("fiction");
+
+        // Two sibling locations made to clash.
+        Location room = new Location("Bedroom");
+        Location shelfA = new Location("Shelf A");
+        Location shelfB = new Location("Shelf B");
+        m.addLocation(room);
+        m.addLocation(shelfA, room);
+        m.addLocation(shelfB, room);
+        shelfB.setName("Shelf A");
+
+        // Two series and two wishlists made to clash.
+        m.addSeries(new Series("Discworld"));
+        Series other = new Series("Dune Chronicles");
+        m.addSeries(other);
+        other.setName("discworld");
+        m.addWishlist(new Wishlist("Birthday"));
+        Wishlist second = new Wishlist("Diwali");
+        m.addWishlist(second);
+        second.setName("BIRTHDAY");
+
+        // References to things that are not in the collection.
+        Book dune = m.addItem("Dune");
+        dune.addCategoryId("missing-category");
+        dune.getCopies().get(0).setLocationId("missing-location");
+        dune.setSeriesId("missing-series");
+
+        List<String> problems = m.checkIntegrity();
+        assertEquals(8, problems.size());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        m.toCollectionData();
+                    }
+                });
+        assertTrue(e.getMessage().contains("8 problems were found."));
+        assertTrue(e.getMessage().contains("missing-location"));
+        assertTrue(e.getMessage().contains("Shelf A"));
     }
 }

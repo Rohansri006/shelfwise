@@ -79,7 +79,7 @@ Holds only what *any* future item type shares — this split is what earns the a
 | `notes` | `String` | yes | — | yes |
 | `rating` | `int` | 0 = unrated | 0–5 → `IllegalArgumentException` | yes |
 | `categoryIds` | `List<String>` | empty allowed | — | via add/remove |
-| `customFields` | `Map<String,String>` | empty allowed | — | via put/remove |
+| `customFields` | `Map<String,String>` | empty allowed | — | via put/remove; names ignore case, insertion order kept (D30) |
 | `dateAdded` | `LocalDate` | no | set in constructor | no |
 | `deleted` | `boolean` | default false | — | yes (soft delete) |
 
@@ -96,7 +96,7 @@ public abstract String getDisplaySummary();  // one line for list views
 | Field | Type | Optional | Validation |
 |---|---|---|---|
 | `subtitle` | `String` | yes | — |
-| `isbn` | `String` | **yes** | if present: ISBN-10/13 checksum → `InvalidISBNException` |
+| `isbn` | `String` | **yes** | if present: ISBN-10/13 checksum → `InvalidISBNException`; stored as ISBN-13 (D29) |
 | `contributors` | `List<Contributor>` | empty allowed | — |
 | `publisher` | `String` | yes | — |
 | `publicationYear` | `int` | 0 = unknown | 0 or 1450–currentYear+1 |
@@ -350,6 +350,12 @@ Defined in `schema.sql` so the UI reads real multi-table joins rather than assem
 | deleting a category with books anywhere in its subtree | `CategoryNotEmptyException` |
 | deleting a location with copies anywhere in its subtree | `LocationNotEmptyException` |
 | a category/location move that would create a cycle | `IllegalArgumentException` |
+| renaming a category/location/series/wishlist to a name taken among its siblings | `IllegalArgumentException` |
+| changing a book's ISBN to one another book has | `DuplicateItemException` |
+| marking a wishlist entry bought when its book is already owned | `DuplicateItemException`; entry kept |
+| saving a collection that breaks any rule above (an edit bypassed the manager) | `IllegalStateException` listing every problem |
+
+**Collection-wide rules live in `CollectionManager`** *(added 18 Oct; D28–D35, ADR 0006)*. Model setters check only their own object, so edits that touch a collection-wide rule go through manager methods: `changeIsbn`, `renameCategory`, `renameLocation`, `renameSeries`, `renameWishlist`, `setLocation`, `fileUnder`, `setSeries`, `markAsBought`. `toCollectionData()`, where every save starts, runs `checkIntegrity()` first, so the database never sees a broken rule. ISBNs are stored as ISBN-13 and indexed in a `HashMap` for O(1) duplicate checks. Item lists and search results come back sorted by title, ignoring case. Text search also matches custom field values.
 
 ISBN-10 checksum uses weights 10…1 mod 11 with `X` = 10; ISBN-13 uses alternating 1/3 weights mod 10. Both are written out as plain loops.
 
