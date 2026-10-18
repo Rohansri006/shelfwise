@@ -18,6 +18,7 @@ import com.shelfwise.core.model.Wishlist;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,26 @@ import java.util.Set;
  * storage at all.
  */
 public class CollectionManager implements Searchable {
+
+    /**
+     * Orders items by title A to Z, ignoring case, so "dune" sits next to
+     * "Dune" rather than after every capitalised title. An anonymous class
+     * implementing {@link Comparator}: {@code compare} returns a negative
+     * number, zero or a positive number for "before", "same" and "after".
+     * Two books with the same title fall back to their ids, so the order
+     * never changes between calls even though the {@code HashMap} behind
+     * it has no order of its own.
+     */
+    private static final Comparator<CollectionItem> BY_TITLE = new Comparator<CollectionItem>() {
+        @Override
+        public int compare(CollectionItem a, CollectionItem b) {
+            int byTitle = String.CASE_INSENSITIVE_ORDER.compare(a.getTitle(), b.getTitle());
+            if (byTitle != 0) {
+                return byTitle;
+            }
+            return a.getId().compareTo(b.getId());
+        }
+    };
 
     /** Every item, trashed ones included, keyed by id. */
     private final Map<String, CollectionItem> itemsById;
@@ -261,8 +282,7 @@ public class CollectionManager implements Searchable {
     }
 
     /**
-     * Items not in the trash, in no particular order - a {@code HashMap}
-     * keeps none, so screens sort the list themselves.
+     * Items not in the trash, sorted by title A to Z, ignoring case.
      *
      * @return a new list of live items
      */
@@ -270,7 +290,7 @@ public class CollectionManager implements Searchable {
         return itemsWithDeleted(false);
     }
 
-    /** @return a new list of the items in the trash */
+    /** @return a new list of the items in the trash, sorted by title */
     public List<CollectionItem> getTrash() {
         return itemsWithDeleted(true);
     }
@@ -1456,8 +1476,12 @@ public class CollectionManager implements Searchable {
     }
 
     /**
+     * Sorting here means every list the screens get - the live items, the
+     * trash and all four searches, which start from the live items - comes
+     * back in the same title order.
+     *
      * @param deleted true for the trash, false for live items
-     * @return a new list of the items in that state
+     * @return a new list of the items in that state, sorted by title
      */
     private List<CollectionItem> itemsWithDeleted(boolean deleted) {
         List<CollectionItem> result = new ArrayList<>();
@@ -1467,6 +1491,7 @@ public class CollectionManager implements Searchable {
                 result.add(all.get(i));
             }
         }
+        Collections.sort(result, BY_TITLE);
         return result;
     }
 

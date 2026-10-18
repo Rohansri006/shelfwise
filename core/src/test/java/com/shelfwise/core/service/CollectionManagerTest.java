@@ -346,6 +346,30 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("items, trash and search results come back sorted by title, ignoring case")
+    void listsSortedByTitle() throws DuplicateItemException {
+        CollectionManager m = new CollectionManager();
+        m.addItem("neuromancer");
+        m.addItem("Dune");
+        m.addItem("Anathem");
+        m.moveToTrash(m.addItem("Zorba the Greek").getId());
+        m.moveToTrash(m.addItem("brave new world").getId());
+
+        List<CollectionItem> live = m.getItems();
+        assertEquals("Anathem", live.get(0).getTitle());
+        assertEquals("Dune", live.get(1).getTitle());
+        // Lower case does not push it after the capitalised titles.
+        assertEquals("neuromancer", live.get(2).getTitle());
+
+        assertEquals("brave new world", m.getTrash().get(0).getTitle());
+        assertEquals("Zorba the Greek", m.getTrash().get(1).getTitle());
+
+        List<CollectionItem> found = m.search("n");
+        assertEquals("Anathem", found.get(0).getTitle());
+        assertEquals("Dune", found.get(1).getTitle());
+    }
+
+    @Test
     @DisplayName("blank text returns every live item")
     void blankSearchReturnsAll() throws DuplicateItemException {
         CollectionManager m = new CollectionManager();
