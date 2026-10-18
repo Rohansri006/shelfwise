@@ -929,4 +929,110 @@ class CollectionManagerTest {
         m.setSeries(guards, null);
         assertNull(guards.getSeriesId());
     }
+
+    // ------------------------------------------------------------------
+    // Integrity check
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a collection built through the manager has no integrity problems")
+    void cleanCollectionPasses() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        m.addCategory(fiction);
+        Location shelf = new Location("Shelf");
+        m.addLocation(shelf);
+        Series series = new Series("Dune Chronicles");
+        m.addSeries(series);
+        Book dune = m.addItem(DUNE_ISBN, "Dune");
+        m.fileUnder(dune, fiction);
+        m.setLocation(dune.getCopies().get(0), shelf);
+        m.setSeries(dune, series);
+
+        assertTrue(m.checkIntegrity().isEmpty());
+        assertNotNull(m.toCollectionData());
+    }
+
+    @Test
+    @DisplayName("an ISBN duplicated by bypassing the manager stops the save, with one problem named")
+    void bypassedDuplicateIsbnStopsSave() throws Exception {
+        // The exact slip ADR 0006 describes: a direct setter call the
+        // manager never saw. Without the check, the database would refuse
+        // this save and every one after it.
+        final CollectionManager m = new CollectionManager();
+        m.addItem(DUNE_ISBN, "Dune");
+        Book other = m.addItem(SECOND_ISBN, "Nineteen Eighty-Four");
+        other.setIsbn(DUNE_ISBN);
+
+        List<String> problems = m.checkIntegrity();
+        assertEquals(1, problems.size());
+        assertTrue(problems.get(0).contains(DUNE_ISBN));
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        m.toCollectionData();
+                    }
+                });
+        assertTrue(e.getMessage().contains("1 problem was found."));
+        assertTrue(e.getMessage().contains(DUNE_ISBN));
+    }
+
+    @Test
+    @DisplayName("every kind of bypassed rule is reported, all in one list")
+    void everyProblemListed() throws Exception {
+        final CollectionManager m = new CollectionManager();
+
+        // Two sibling categories, then two top-level ones, made to clash.
+        Category fiction = new Category("Fiction");
+        Category scifi = new Category("Science fiction");
+        Category fantasy = new Category("Fantasy");
+        m.addCategory(fiction);
+        m.addCategory(scifi, fiction);
+        m.addCategory(fantasy, fiction);
+        fantasy.setName("science FICTION");
+        Category reference = new Category("Reference");
+        m.addCategory(reference);
+        reference.setName("fiction");
+
+        // Two sibling locations made to clash.
+        Location room = new Location("Bedroom");
+        Location shelfA = new Location("Shelf A");
+        Location shelfB = new Location("Shelf B");
+        m.addLocation(room);
+        m.addLocation(shelfA, room);
+        m.addLocation(shelfB, room);
+        shelfB.setName("Shelf A");
+
+        // Two series and two wishlists made to clash.
+        m.addSeries(new Series("Discworld"));
+        Series other = new Series("Dune Chronicles");
+        m.addSeries(other);
+        other.setName("discworld");
+        m.addWishlist(new Wishlist("Birthday"));
+        Wishlist second = new Wishlist("Diwali");
+        m.addWishlist(second);
+        second.setName("BIRTHDAY");
+
+        // References to things that are not in the collection.
+        Book dune = m.addItem("Dune");
+        dune.addCategoryId("missing-category");
+        dune.getCopies().get(0).setLocationId("missing-location");
+        dune.setSeriesId("missing-series");
+
+        List<String> problems = m.checkIntegrity();
+        assertEquals(8, problems.size());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        m.toCollectionData();
+                    }
+                });
+        assertTrue(e.getMessage().contains("8 problems were found."));
+        assertTrue(e.getMessage().contains("missing-location"));
+        assertTrue(e.getMessage().contains("Shelf A"));
+    }
 }

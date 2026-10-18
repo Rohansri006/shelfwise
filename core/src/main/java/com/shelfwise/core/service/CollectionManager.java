@@ -997,6 +997,183 @@ public class CollectionManager implements Searchable {
     }
 
     // ------------------------------------------------------------------
+    // Integrity check - the safety net behind the edit methods above
+    // ------------------------------------------------------------------
+
+    /**
+     * Lists every way the collection breaks a rule the database enforces.
+     * <p>
+     * The edit methods above keep these rules, but the model setters are
+     * still public, so a screen could change an object directly. Saving
+     * rewrites everything in one transaction, so a single broken rule
+     * would make the database refuse that save and every save after it.
+     * Checking here first, in memory, turns that into one clear list of
+     * problems instead. Names are compared ignoring case, the same way the
+     * edit methods compare them.
+     *
+     * @return a description of each problem; empty if there are none
+     */
+    public List<String> checkIntegrity() {
+        List<String> problems = new ArrayList<>();
+        checkIsbns(problems);
+        checkCategoryNames(problems);
+        checkLocationNames(problems);
+        checkReferences(problems);
+
+        List<String> seriesNames = new ArrayList<>();
+        List<Series> allSeries = getSeries();
+        for (int i = 0; i < allSeries.size(); i++) {
+            seriesNames.add(allSeries.get(i).getName());
+        }
+        reportDuplicateNames(seriesNames, "the series", problems);
+
+        List<String> wishlistNames = new ArrayList<>();
+        for (int i = 0; i < wishlists.size(); i++) {
+            wishlistNames.add(wishlists.get(i).getName());
+        }
+        reportDuplicateNames(wishlistNames, "the wishlists", problems);
+        return problems;
+    }
+
+    /**
+     * Unique ISBNs, trashed books included. Walks the books themselves
+     * rather than trusting the ISBN index, because a direct
+     * {@link Book#setIsbn} call changes the book without updating it.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkIsbns(List<String> problems) {
+        Map<String, Book> seen = new HashMap<>();
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i) instanceof Book) {
+                Book book = (Book) all.get(i);
+                if (!book.hasIsbn()) {
+                    continue;
+                }
+                Book earlier = seen.get(book.getIsbn());
+                if (earlier == null) {
+                    seen.put(book.getIsbn(), book);
+                } else {
+                    problems.add("Two books have ISBN " + book.getIsbn() + ": \""
+                            + earlier.getTitle() + "\" and \"" + book.getTitle() + "\".");
+                }
+            }
+        }
+    }
+
+    /**
+     * Unique names among the top-level categories, and among each
+     * category's children.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkCategoryNames(List<String> problems) {
+        List<String> rootNames = new ArrayList<>();
+        List<Category> roots = getRootCategories();
+        for (int i = 0; i < roots.size(); i++) {
+            rootNames.add(roots.get(i).getName());
+        }
+        reportDuplicateNames(rootNames, "the top-level categories", problems);
+
+        List<Category> all = new ArrayList<>(categoriesById.values());
+        for (int i = 0; i < all.size(); i++) {
+            List<Category> children = all.get(i).getChildren();
+            List<String> names = new ArrayList<>();
+            for (int j = 0; j < children.size(); j++) {
+                names.add(children.get(j).getName());
+            }
+            reportDuplicateNames(names, "category \"" + all.get(i).getPath() + "\"", problems);
+        }
+    }
+
+    /**
+     * Unique names among the top-level locations, and among each
+     * location's children.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkLocationNames(List<String> problems) {
+        List<String> rootNames = new ArrayList<>();
+        List<Location> roots = getRootLocations();
+        for (int i = 0; i < roots.size(); i++) {
+            rootNames.add(roots.get(i).getName());
+        }
+        reportDuplicateNames(rootNames, "the top-level locations", problems);
+
+        List<Location> all = new ArrayList<>(locationsById.values());
+        for (int i = 0; i < all.size(); i++) {
+            List<Location> children = all.get(i).getChildren();
+            List<String> names = new ArrayList<>();
+            for (int j = 0; j < children.size(); j++) {
+                names.add(children.get(j).getName());
+            }
+            reportDuplicateNames(names, "location \"" + all.get(i).getPath() + "\"", problems);
+        }
+    }
+
+    /**
+     * Every category, location and series an item points at must be in
+     * the collection - the database's foreign keys would refuse anything
+     * else.
+     *
+     * @param problems where to add what is found
+     */
+    private void checkReferences(List<String> problems) {
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            CollectionItem item = all.get(i);
+            List<String> categoryIds = item.getCategoryIds();
+            for (int j = 0; j < categoryIds.size(); j++) {
+                if (!categoriesById.containsKey(categoryIds.get(j))) {
+                    problems.add("\"" + item.getTitle() + "\" is filed under a category that is"
+                            + " not in the collection (id " + categoryIds.get(j) + ").");
+                }
+            }
+            if (!(item instanceof Book)) {
+                continue;
+            }
+            Book book = (Book) item;
+            List<Copy> copies = book.getCopies();
+            for (int j = 0; j < copies.size(); j++) {
+                String locationId = copies.get(j).getLocationId();
+                if (locationId != null && !locationsById.containsKey(locationId)) {
+                    problems.add("A copy of \"" + book.getTitle() + "\" is in a location that is"
+                            + " not in the collection (id " + locationId + ").");
+                }
+            }
+            if (book.getSeriesId() != null && !seriesById.containsKey(book.getSeriesId())) {
+                problems.add("\"" + book.getTitle() + "\" belongs to a series that is"
+                        + " not in the collection (id " + book.getSeriesId() + ").");
+            }
+        }
+    }
+
+    /**
+     * Adds a problem for every name that repeats one before it, ignoring
+     * case. A {@link HashMap} keyed by the lower-cased name finds each
+     * repeat in one lookup.
+     *
+     * @param names    the names that must be unique
+     * @param where    how to describe the group, e.g. "the series"
+     * @param problems where to add what is found
+     */
+    private static void reportDuplicateNames(List<String> names, String where,
+                                             List<String> problems) {
+        Map<String, String> seen = new HashMap<>();
+        for (int i = 0; i < names.size(); i++) {
+            String key = names.get(i).trim().toLowerCase(Locale.ROOT);
+            String earlier = seen.get(key);
+            if (earlier == null) {
+                seen.put(key, names.get(i));
+            } else {
+                problems.add("Two names clash in " + where + ": \"" + earlier
+                        + "\" and \"" + names.get(i) + "\".");
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Searching - the four Searchable overloads
     // ------------------------------------------------------------------
 
@@ -1203,10 +1380,28 @@ public class CollectionManager implements Searchable {
      * the cast. The check is what makes the cast safe: if another item type
      * is ever added, it is skipped instead of crashing with a
      * {@code ClassCastException}.
+     * <p>
+     * Every save starts here, so this is where {@link #checkIntegrity()}
+     * runs. A problem means a bug - some edit bypassed the manager - so it
+     * is reported as an unchecked exception listing every problem, before
+     * the database sees any of them.
      *
      * @return the snapshot, stamped with the current time
+     * @throws IllegalStateException if the collection breaks a
+     *                               collection-wide rule
      */
     public CollectionData toCollectionData() {
+        List<String> problems = checkIntegrity();
+        if (!problems.isEmpty()) {
+            StringBuilder message = new StringBuilder("The collection cannot be saved: ");
+            message.append(problems.size());
+            message.append(problems.size() == 1 ? " problem was found." : " problems were found.");
+            for (int i = 0; i < problems.size(); i++) {
+                message.append("\n- ").append(problems.get(i));
+            }
+            throw new IllegalStateException(message.toString());
+        }
+
         List<Book> books = new ArrayList<>();
         List<CollectionItem> all = allItems();
         for (int i = 0; i < all.size(); i++) {
