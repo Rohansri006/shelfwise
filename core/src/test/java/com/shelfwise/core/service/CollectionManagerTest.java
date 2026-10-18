@@ -80,6 +80,25 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("an ISBN-10 is refused when its ISBN-13 twin is already in the collection")
+    void isbn10DuplicateOfIsbn13Refused() throws Exception {
+        // The same edition printed with both barcodes: scanning the old
+        // ISBN-10 must not add a second book.
+        final CollectionManager m = new CollectionManager();
+        Book first = m.addItem(DUNE_ISBN, "Dune");
+
+        DuplicateItemException e = assertThrows(DuplicateItemException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.addItem("0143031058", "Dune (old barcode)");
+                    }
+                });
+        assertEquals(first.getId(), e.getExistingItemId());
+        assertSame(first, m.findBookByIsbn("0-14-303105-8"));
+    }
+
+    @Test
     @DisplayName("a duplicate of a trashed book is still refused")
     void duplicateOfTrashedRefused() throws Exception {
         // If this were allowed, restoring the trashed book would leave two
@@ -294,6 +313,15 @@ class CollectionManagerTest {
         CollectionManager m = new CollectionManager();
         Book dune = m.addItem(DUNE_ISBN, "Dune");
         assertSame(dune, m.search("978-0-14").get(0));
+    }
+
+    @Test
+    @DisplayName("a complete ISBN-10 finds the book stored under its ISBN-13")
+    void textSearchIsbn10() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Book dune = m.addItem(DUNE_ISBN, "Dune");
+        assertEquals(1, m.search("0-14-303105-8").size());
+        assertSame(dune, m.search("0143031058").get(0));
     }
 
     @Test

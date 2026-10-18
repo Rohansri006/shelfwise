@@ -85,6 +85,18 @@ class BookTest {
     }
 
     @Test
+    @DisplayName("an ISBN-10 is stored as its ISBN-13 twin")
+    void isbn10StoredAsIsbn13() throws InvalidISBNException {
+        // Without this, one edition entered once as 0143031058 and once as
+        // 9780143031055 would look like two different books.
+        Book book = new Book("0-14-303105-8", "Glimpses of World History");
+        assertEquals("9780143031055", book.getIsbn());
+
+        book.setIsbn("014118776X");
+        assertEquals("9780141187761", book.getIsbn());
+    }
+
+    @Test
     @DisplayName("ISBN is optional: a book can be created without one")
     void isbnOptional() throws InvalidISBNException {
         // Books printed before barcodes exist, so this must be allowed.

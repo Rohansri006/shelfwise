@@ -197,15 +197,21 @@ public class CollectionManager implements Searchable {
     }
 
     /**
-     * Finds a book by ISBN, in either written form: "978-0-14-303105-5"
-     * finds a book stored as "9780143031055".
+     * Finds a book by ISBN, in any written form: "978-0-14-303105-5" and the
+     * ISBN-10 "0143031058" both find a book stored as "9780143031055".
      *
      * @param isbn the ISBN to look for
      * @return the book, trashed or not, or null if there is none
      */
     public Book findBookByIsbn(String isbn) {
-        String wanted = IsbnValidator.normalise(isbn);
-        if (wanted == null || wanted.isEmpty()) {
+        // Books store ISBN-13 (see Book.setIsbn), so the search key must be
+        // converted the same way before comparing.
+        String wanted;
+        try {
+            wanted = IsbnValidator.toIsbn13(isbn);
+        } catch (InvalidISBNException e) {
+            // Blank or invalid: no stored book can have it, since every
+            // stored ISBN passed validation.
             return null;
         }
         List<CollectionItem> all = allItems();
@@ -772,7 +778,9 @@ public class CollectionManager implements Searchable {
      * {@inheritDoc}
      * <p>
      * An ISBN typed with hyphens still matches, because the query is also
-     * compared in normalised form against the stored, normalised ISBN.
+     * compared in normalised form against the stored, normalised ISBN. A
+     * complete ISBN-10 matches too, because it is converted to the ISBN-13
+     * form that books store.
      */
     @Override
     public List<CollectionItem> search(String text) {
@@ -782,6 +790,12 @@ public class CollectionManager implements Searchable {
         }
         String query = text.trim().toLowerCase(Locale.ROOT);
         String isbnQuery = IsbnValidator.normalise(text.trim());
+        try {
+            isbnQuery = IsbnValidator.toIsbn13(isbnQuery);
+        } catch (InvalidISBNException e) {
+            // Not a complete ISBN (a title word, or part of a number): keep
+            // it as typed so it still matches as a fragment.
+        }
 
         List<CollectionItem> result = new ArrayList<>();
         for (int i = 0; i < live.size(); i++) {
