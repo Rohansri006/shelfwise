@@ -93,6 +93,13 @@ public class CollectionManager implements Searchable {
     /** Every wishlist, in the order they were added. */
     private final List<Wishlist> wishlists;
 
+    /**
+     * The ISO 4217 code every price in the collection is in. Held here so a
+     * load followed by a save keeps it; it travels with the data to the
+     * database (ADR 0005).
+     */
+    private String currencyCode;
+
     /** Creates an empty collection - the state on first run. */
     public CollectionManager() {
         this.itemsById = new HashMap<>();
@@ -101,6 +108,7 @@ public class CollectionManager implements Searchable {
         this.locationsById = new HashMap<>();
         this.seriesById = new HashMap<>();
         this.wishlists = new ArrayList<>();
+        this.currencyCode = CollectionData.DEFAULT_CURRENCY;
     }
 
     /**
@@ -138,6 +146,24 @@ public class CollectionManager implements Searchable {
             seriesById.put(s.getId(), s);
         }
         wishlists.addAll(data.getWishlists());
+        currencyCode = data.getCurrencyCode();
+    }
+
+    /** @return the ISO 4217 code of the collection's currency, e.g. "INR" */
+    public String getCurrencyCode() {
+        return currencyCode;
+    }
+
+    /**
+     * Changes the collection's currency. Prices are only relabelled, never
+     * converted: 500 INR becomes 500 USD (ADR 0005), so the screen should
+     * say so before calling this.
+     *
+     * @param currencyCode an ISO 4217 code such as "USD"; case is ignored
+     * @throws IllegalArgumentException if null or not a real currency
+     */
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = CollectionData.validCurrency(currencyCode);
     }
 
     // ------------------------------------------------------------------
@@ -1485,7 +1511,8 @@ public class CollectionManager implements Searchable {
                 new ArrayList<>(locationsById.values()),
                 new ArrayList<>(seriesById.values()),
                 wishlists,
-                Instant.now());
+                Instant.now(),
+                currencyCode);
     }
 
     // ------------------------------------------------------------------
