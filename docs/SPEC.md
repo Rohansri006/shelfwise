@@ -304,11 +304,17 @@ The in-memory model keeps the `parentId`-plus-`transient`-children design from �
 
 Dates are ISO-8601 `TEXT` (`2026-10-12`), which compares and sorts correctly as text and ports to MySQL `DATE` unchanged. Money is `REAL` → MySQL `DECIMAL(10,2)`.
 
+**Order is stored explicitly.** `book_contributor.position` and `custom_field.position` hold the order of credits and custom fields, since table rows have no order of their own; without them the primary author could change on reload. `custom_field.field_key` is `COLLATE NOCASE`, so one key cannot exist under two spellings. *(Added 15 Oct.)*
+
+**Currency.** All prices in a collection share one currency, an ISO 4217 code stored in `app_setting` under the key `currency` (default `INR`). It lives in the database, not `settings.json`, so it travels with the file and its backups. Changing it relabels prices and never converts them. *(Added 15 Oct.)*
+
 ### 6.5 Save, backup and conflict detection
 
-Writes go through a transaction per logical operation: `setAutoCommit(false)`, then `commit()`, with `rollback()` in a `catch` block — so a half-applied bulk edit is impossible.
+**Autosave.** There is no Save button: every logical operation (one edit, one bulk Confirm All) saves at once. *(Decided 15 Oct.)*
 
-Backups rotate on each successful save: copy `shelfwise.db` into `backups/` with a timestamp, then delete the oldest while more than 5 exist.
+Each save **rewrites the whole collection** in one transaction: `setAutoCommit(false)`, delete every row (children before parents; tree tables leaves first, because SQLite applies `RESTRICT` per row), insert the snapshot (parents before children), then `commit()`, with `rollback()` in a `catch` block. A half-applied bulk edit is therefore impossible. Measured: a 1,000-book save takes ~30 ms, so saves run on the UI thread; a test keeps it under 200 ms.
+
+Backups are taken **once per launch**: the first save of a session copies the existing `shelfwise.db` into `backups/shelfwise-<yyyyMMdd-HHmmss>.db` *before* writing, then deletes the oldest while more than 5 exist. With autosave, a backup on every save would cover only the last five edits; once per launch covers the last five sessions. *(Changed 15 Oct from "on each successful save".)*
 
 Conflict detection compares the database file's last-modified time against the value recorded at load; if it changed underneath us, `SyncConflictException` carries both timestamps and nothing is written. The UI offers **Keep mine** (overwrite, rebaseline) or **Keep theirs** (discard in-memory state, reload). No merge.
 

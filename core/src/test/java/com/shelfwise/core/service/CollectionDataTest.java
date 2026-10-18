@@ -72,4 +72,37 @@ class CollectionDataTest {
             }
         });
     }
+
+    @Test
+    @DisplayName("a snapshot is priced in INR unless told otherwise")
+    void defaultCurrency() {
+        CollectionData data = new CollectionData(null, null, null, null, null, null);
+        assertEquals("INR", data.getCurrencyCode());
+    }
+
+    @Test
+    @DisplayName("currency codes are accepted in any case and stored in upper case")
+    void currencyNormalised() {
+        CollectionData data = new CollectionData(null, null, null, null, null, null, " usd ");
+        assertEquals("USD", data.getCurrencyCode());
+    }
+
+    @Test
+    @DisplayName("an unknown or null currency code is rejected, naming the value")
+    void badCurrencyRejected() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        new CollectionData(null, null, null, null, null, null, "XYZQ");
+                    }
+                });
+        assertTrue(e.getMessage().contains("XYZQ"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                new CollectionData(null, null, null, null, null, null, null);
+            }
+        });
+    }
 }
