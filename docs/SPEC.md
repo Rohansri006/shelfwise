@@ -32,7 +32,7 @@ Conventions used throughout:
 Also decided without asking, because any defensible choice works provided it can be explained:
 
 - **Password hashing:** `MessageDigest` SHA-256 over a per-install random salt. No dependency, ~10 lines, fully explainable. Not production-grade (no PBKDF2/bcrypt) — stated honestly in the report as a deliberate scope decision.
-- **`ReadingStatus`** is a stored field on `Book`, updated when a session is added or closed. Not derived on read — a stored field is easier to defend than a derivation rule.
+- **`ReadingStatus`** is a stored field on `Book`, updated when a session is added or closed (closing goes through `Book.finishReadingSession`, D13; removing a session never reverts it, D36). Not derived on read — a stored field is easier to defend than a derivation rule.
 - **Contributors are embedded** in `Book` (composition), not shared by ID. The same author appearing on two books is duplicated. Accepted: it keeps the model simple, and `Category` already supplies the aggregation relationship the UML needs.
 
 ---
@@ -49,7 +49,8 @@ Exception
     ├── CategoryNotEmptyException          carries the blocking book count
     ├── LocationNotEmptyException          carries the blocking book count
     ├── MetadataFetchException             carries the provider name
-    └── SyncConflictException              carries both timestamps
+    ├── SyncConflictException              carries both timestamps
+    └── ScannerException                   carries the device name (D34)
 ```
 
 Checked, so the compiler forces the UI to handle them — which is exactly the "exception handling" the marking scheme wants to see. Standard exceptions still appear: `IOException` and `NumberFormatException` in storage and CSV, `IllegalArgumentException` from validating setters, `try`-with-resources on every stream.
@@ -213,8 +214,8 @@ public interface StorageProvider {
 
 public interface BarcodeScanner {
     boolean isAvailable();
-    void start() throws ShelfWiseException;
-    String readNextBarcode() throws ShelfWiseException;   // blocking; null when stopped
+    void start() throws ScannerException;
+    String readNextBarcode() throws ScannerException;     // blocking; null when stopped
     void stop();
 }
 

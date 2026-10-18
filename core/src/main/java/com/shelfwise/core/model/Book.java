@@ -528,6 +528,36 @@ public class Book extends CollectionItem {
     }
 
     /**
+     * Closes an open reading session and marks the book finished: what the
+     * "Finished reading" button does.
+     * <p>
+     * Setting the end date on the session directly would leave the status
+     * at READING, because a session knows nothing about its book. Going
+     * through the book keeps the two in step, the same way
+     * {@link #addReadingSession} does when a session is added already
+     * finished.
+     *
+     * @param session one of this book's sessions
+     * @param endDate the day it was finished; not before the session started
+     * @throws IllegalArgumentException if the session is not this book's,
+     *                                  the date is null, or it is before the
+     *                                  start date
+     */
+    public void finishReadingSession(ReadingSession session, LocalDate endDate) {
+        if (session == null || !readingSessions.contains(session)) {
+            throw new IllegalArgumentException(
+                    "That reading session does not belong to \"" + getTitle() + "\".");
+        }
+        if (endDate == null) {
+            throw new IllegalArgumentException("A finished session needs an end date.");
+        }
+        // The session validates the date first; if it refuses, the status
+        // below is never touched.
+        session.setEndDate(endDate);
+        this.readingStatus = ReadingStatus.FINISHED;
+    }
+
+    /**
      * @param session the session to remove
      * @return true if it was present
      */

@@ -1,6 +1,6 @@
 package com.shelfwise.core.service;
 
-import com.shelfwise.core.exception.ShelfWiseException;
+import com.shelfwise.core.exception.ScannerException;
 
 /**
  * A device that reads ISBN barcodes.
@@ -29,9 +29,9 @@ public interface BarcodeScanner {
     /**
      * Opens the device. Blocks until it is ready.
      *
-     * @throws ShelfWiseException if the device cannot be opened
+     * @throws ScannerException if the device cannot be opened
      */
-    void start() throws ShelfWiseException;
+    void start() throws ScannerException;
 
     /**
      * Waits for the next barcode. Blocks until one is read or the scanner
@@ -39,9 +39,9 @@ public interface BarcodeScanner {
      *
      * @return the barcode's digits, or null once {@link #stop()} has been
      *         called
-     * @throws ShelfWiseException if reading fails
+     * @throws ScannerException if reading fails
      */
-    String readNextBarcode() throws ShelfWiseException;
+    String readNextBarcode() throws ScannerException;
 
     /**
      * Releases the device. Safe to call more than once, and it makes a
