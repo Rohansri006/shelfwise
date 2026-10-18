@@ -1,0 +1,1287 @@
+{
+  "formatVersion": 1,
+  "exportedAt": "2026-10-18T00:00:00Z",
+  "currency": "INR",
+  "books": [
+    {
+      "id": "5abce7f6-53f3-5665-aa98-6c3d5c3397d2",
+      "title": "Glimpses of World History",
+      "isbn": "9780143031055",
+      "publisher": "Penguin Books India",
+      "publicationYear": 2005,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2021-08-14",
+      "categoryIds": [
+        "88c3b21d-e0d6-536a-af95-c35babccf633",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Jawaharlal Nehru",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "ea675bb3-b4bb-5e72-b2d6-016a4f165762",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2021-08-14",
+          "pricePaid": 599,
+          "locationId": "eb8bb586-0c75-5617-a739-dec58beb4481"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "d54aee04-da52-59d3-94f3-ec0393458e2a",
+          "startDate": "2021-08-20",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2022-01-30"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "1d402c1a-7982-54ab-8453-eaff6b74b1ce",
+      "title": "The Discovery of India",
+      "isbn": "9780143031031",
+      "publisher": "Penguin Books India",
+      "publicationYear": 2004,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2020-01-26",
+      "categoryIds": [
+        "88c3b21d-e0d6-536a-af95-c35babccf633",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Jawaharlal Nehru",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "392b0c86-6925-54e3-a722-d41675d69907",
+          "format": "PAPERBACK",
+          "condition": "FAIR",
+          "purchaseDate": "2020-01-26",
+          "pricePaid": 450,
+          "locationId": "eb8bb586-0c75-5617-a739-dec58beb4481"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "de0e715f-643f-57db-bb4e-e02bf01d5952",
+          "startDate": "2020-02-01",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2020-06-15"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "5b3cc5a6-1d53-5aa3-b418-0a3f9dfeda7f",
+      "title": "The God of Small Things",
+      "isbn": "9780679457312",
+      "publisher": "Random House",
+      "publicationYear": 1997,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2019-11-02",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Arundhati Roy",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "b4b2b192-8c31-5d12-92ea-e1172922dda9",
+          "format": "HARDCOVER",
+          "condition": "LIKE_NEW",
+          "purchaseDate": "2019-11-02",
+          "pricePaid": 899,
+          "locationId": "c022dbf0-35a5-58c8-95d1-cd47f294c6cc"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "59d6986f-5584-5e98-9158-48ea5ea694b4",
+          "startDate": "2019-11-05",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2019-12-01"
+        }
+      ],
+      "customFields": [
+        {
+          "key": "Gift from",
+          "value": "Asha"
+        }
+      ]
+    },
+    {
+      "id": "0bf1364f-c81e-5933-8482-4d50b8abaa71",
+      "title": "Midnight's Children",
+      "isbn": "9780099578512",
+      "publisher": "Vintage",
+      "publicationYear": 2006,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2022-03-12",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Salman Rushdie",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "0ce4023c-13eb-5fab-93c9-0cefefcd007d",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2022-03-12",
+          "pricePaid": 499,
+          "locationId": "c022dbf0-35a5-58c8-95d1-cd47f294c6cc"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "fc5fd7b8-79a2-5afd-8558-3a49c3e4bbfe",
+          "startDate": "2022-03-15",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2022-05-20"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "3f27f82f-31b3-5761-bf25-454bd5e02de6",
+      "title": "The White Tiger",
+      "isbn": "9781416562603",
+      "publisher": "Free Press",
+      "publicationYear": 2008,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2023-01-07",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Aravind Adiga",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "69e5c09c-a1a2-5001-a80e-915f3f168ae0",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2023-01-07",
+          "pricePaid": 350,
+          "locationId": "c022dbf0-35a5-58c8-95d1-cd47f294c6cc"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "0cc9ab4f-9760-577d-9022-c934e5e8c8d4",
+          "startDate": "2023-01-10",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2023-01-28"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "89c0cb93-5ac3-57be-8677-776edba84a8b",
+      "title": "The Guide",
+      "isbn": "9780143039648",
+      "publisher": "Penguin Books",
+      "publicationYear": 2006,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2020-07-18",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "R. K. Narayan",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "b9c4b217-f79b-55ac-97f1-7a0b06bde56f",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2020-07-18",
+          "pricePaid": 299,
+          "locationId": "d212b16a-5c92-5ebb-a9a2-3737fba472ac"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "974873d3-b1af-5ee1-b447-6cf0fd37b8b4",
+          "startDate": "2020-07-20",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2020-08-05"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "c140e376-311b-5118-ba34-6765b1678295",
+      "title": "Malgudi Days",
+      "isbn": "9780143039655",
+      "publisher": "Penguin Books",
+      "publicationYear": 2006,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "READING",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2018-05-05",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "R. K. Narayan",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "375721d3-5133-56d5-8169-7e389bce0852",
+          "format": "PAPERBACK",
+          "condition": "FAIR",
+          "purchaseDate": "2018-05-05",
+          "pricePaid": 250,
+          "locationId": "57b6a4e4-5de2-5891-a991-01e030244468"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "268d3d5f-7809-5ead-a296-43c8a98f9084",
+          "startDate": "2026-09-28",
+          "pagesRead": 0,
+          "percentComplete": 0
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "00f2ad01-582d-5454-b09d-5287ba6ae1b5",
+      "title": "A Suitable Boy",
+      "isbn": "9780060786526",
+      "publisher": "Harper Perennial",
+      "publicationYear": 2005,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "ABANDONED",
+      "rating": 3,
+      "deleted": false,
+      "dateAdded": "2021-02-14",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Vikram Seth",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "a8582bf3-7bc1-5af0-9e5e-fc86e6748cfa",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2021-02-14",
+          "pricePaid": 799,
+          "locationId": "d212b16a-5c92-5ebb-a9a2-3737fba472ac"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "ea485e1c-7bab-5d03-a0c8-80024d0a2393",
+          "startDate": "2021-02-20",
+          "pagesRead": 0,
+          "percentComplete": 0
+        }
+      ],
+      "customFields": [],
+      "notes": "Gave up at page 600. One day."
+    },
+    {
+      "id": "c14648e8-7555-591a-b501-6f59e9953835",
+      "title": "Wings of Fire",
+      "isbn": "9788173711466",
+      "publisher": "Universities Press",
+      "publicationYear": 2002,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2015-10-15",
+      "categoryIds": [
+        "c6a3e1c5-13f2-5f37-bbcb-f3c5d4ef05b2",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "A. P. J. Abdul Kalam",
+          "role": "AUTHOR"
+        },
+        {
+          "name": "Arun Tiwari",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "169361e3-d397-5982-bb5f-f14e4a2058db",
+          "format": "PAPERBACK",
+          "condition": "LIKE_NEW",
+          "purchaseDate": "2015-10-15",
+          "pricePaid": 195,
+          "locationId": "3fbe8074-d5ab-5d63-9013-a141b8e1bcc9"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "56ed745c-79b4-5b85-bb44-355cd664794f",
+          "startDate": "2015-10-16",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2015-11-01"
+        }
+      ],
+      "customFields": [
+        {
+          "key": "Signed",
+          "value": "yes"
+        }
+      ]
+    },
+    {
+      "id": "d72f0451-3a14-58ef-b74b-ae787405d51b",
+      "title": "Train to Pakistan",
+      "isbn": "9780143065883",
+      "publisher": "Penguin India",
+      "publicationYear": 2009,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "UNREAD",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2024-08-15",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Khushwant Singh",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "b2c2aa8d-69db-56d4-ab5d-e5dfe107c6a1",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2024-08-15",
+          "pricePaid": 299,
+          "locationId": "d212b16a-5c92-5ebb-a9a2-3737fba472ac"
+        }
+      ],
+      "readingSessions": [],
+      "customFields": []
+    },
+    {
+      "id": "e2b15e74-d049-5fd1-b7b8-3e859165a772",
+      "title": "The Inheritance of Loss",
+      "isbn": "9780802142818",
+      "publisher": "Grove Press",
+      "publicationYear": 2006,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "UNREAD",
+      "rating": 0,
+      "deleted": false,
+      "dateAdded": "2026-06-01",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Kiran Desai",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "1c92ecb4-f741-5889-8aa3-da11b519ff65",
+          "format": "PAPERBACK",
+          "condition": "NEW",
+          "purchaseDate": "2026-06-01",
+          "pricePaid": 425
+        }
+      ],
+      "readingSessions": [],
+      "customFields": []
+    },
+    {
+      "id": "70621fb4-d8a6-54d6-ab9a-549a8a640d68",
+      "title": "Interpreter of Maladies",
+      "isbn": "9780395927205",
+      "publisher": "Houghton Mifflin",
+      "publicationYear": 1999,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2022-09-10",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Jhumpa Lahiri",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "9858af22-bc54-5c98-a1f8-900c2ba1b312",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2022-09-10",
+          "pricePaid": 399,
+          "locationId": "c022dbf0-35a5-58c8-95d1-cd47f294c6cc"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "e5be97b0-ce9d-5b74-addb-37290c63565b",
+          "startDate": "2022-09-11",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2022-09-25"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "bc3634e8-d0f4-5cdd-a747-3dc5b8451708",
+      "title": "The Namesake",
+      "isbn": "9780618485222",
+      "publisher": "Mariner Books",
+      "publicationYear": 2004,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "UNREAD",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2022-10-02",
+      "categoryIds": [
+        "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+        "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac"
+      ],
+      "contributors": [
+        {
+          "name": "Jhumpa Lahiri",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "57f45c8b-8381-5d52-a02d-317f6de68e9b",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2022-10-02",
+          "pricePaid": 399,
+          "locationId": "c022dbf0-35a5-58c8-95d1-cd47f294c6cc"
+        }
+      ],
+      "readingSessions": [],
+      "customFields": []
+    },
+    {
+      "id": "3bf16608-28ac-5146-9472-877a276f2cfa",
+      "title": "Dune",
+      "isbn": "9780441172719",
+      "publisher": "Ace Books",
+      "publicationYear": 1987,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2017-04-22",
+      "categoryIds": [
+        "504c6167-d03e-59b7-a4f8-5658815451f6"
+      ],
+      "contributors": [
+        {
+          "name": "Frank Herbert",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "6c72155c-685d-5677-b55b-537d0d9023fa",
+          "format": "PAPERBACK",
+          "condition": "FAIR",
+          "purchaseDate": "2017-04-22",
+          "pricePaid": 350,
+          "locationId": "c695781f-3246-56e2-ad87-be0b65d7b5ae"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "65ffed0d-10f1-578f-8a8a-a91c32e709fe",
+          "startDate": "2017-04-25",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2017-06-01"
+        },
+        {
+          "id": "b9dcb181-4b03-5281-9037-6f4449ac2029",
+          "startDate": "2024-02-01",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2024-03-10"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "e0e2fe76-5b7e-5fbc-a1c6-63818860a68d",
+      "title": "Nineteen Eighty-Four",
+      "isbn": "9780141187761",
+      "publisher": "Penguin Classics",
+      "publicationYear": 2004,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2016-08-01",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c",
+        "504c6167-d03e-59b7-a4f8-5658815451f6"
+      ],
+      "contributors": [
+        {
+          "name": "George Orwell",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "e2d26342-1011-53b6-92b7-7c4f4643a736",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2016-08-01",
+          "pricePaid": 299,
+          "locationId": "c695781f-3246-56e2-ad87-be0b65d7b5ae"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "40fe4b8c-74eb-5cbc-9548-8caba7746778",
+          "startDate": "2016-08-02",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2016-08-20"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "914d6d17-c992-5a19-b489-0862bfb1f437",
+      "title": "To Kill a Mockingbird",
+      "isbn": "9780061120084",
+      "publisher": "Harper Perennial",
+      "publicationYear": 2006,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2019-03-03",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c"
+      ],
+      "contributors": [
+        {
+          "name": "Harper Lee",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "14fd88ed-66c0-593d-9c88-65bce46a5f48",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2019-03-03",
+          "pricePaid": 399,
+          "locationId": "d212b16a-5c92-5ebb-a9a2-3737fba472ac"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "f2e84552-0717-5bb6-aff0-c314ae3bfe50",
+          "startDate": "2019-03-05",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2019-03-30"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "a70bebc8-61ae-5d61-8a17-243bb659af61",
+      "title": "The Great Gatsby",
+      "isbn": "9780743273565",
+      "publisher": "Scribner",
+      "publicationYear": 2004,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 3,
+      "deleted": false,
+      "dateAdded": "2023-05-20",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c"
+      ],
+      "contributors": [
+        {
+          "name": "F. Scott Fitzgerald",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "67c877c2-ac7f-556f-aeba-dd7c25021809",
+          "format": "PAPERBACK",
+          "condition": "LIKE_NEW",
+          "purchaseDate": "2023-05-20",
+          "pricePaid": 349,
+          "locationId": "d212b16a-5c92-5ebb-a9a2-3737fba472ac"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "3e8289de-ae47-56f6-ab90-c2def93dbdb3",
+          "startDate": "2023-05-21",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2023-05-28"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "3a8fa96d-ddd8-59ee-b109-ebfb6a955e41",
+      "title": "Pride and Prejudice",
+      "isbn": "9780141439518",
+      "publisher": "Penguin Books",
+      "publicationYear": 2003,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2018-12-25",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c"
+      ],
+      "contributors": [
+        {
+          "name": "Jane Austen",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "8a5e1a0d-4331-5631-8c11-5bf793550e22",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2018-12-25",
+          "pricePaid": 250,
+          "locationId": "d212b16a-5c92-5ebb-a9a2-3737fba472ac"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "5f0b8de9-4953-5a2e-815e-5a61d86cb95d",
+          "startDate": "2019-01-01",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2019-01-20"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "5f990ca9-7e28-5d4e-84ee-21dbadcbe82e",
+      "title": "The Hobbit",
+      "isbn": "9780547928227",
+      "publisher": "Mariner Books",
+      "publicationYear": 2012,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2012-06-10",
+      "categoryIds": [
+        "85260426-122b-588b-a5ef-1a50856b3d5c"
+      ],
+      "contributors": [
+        {
+          "name": "J. R. R. Tolkien",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "2c6f30e6-0b59-548f-89a6-411cb2c07e9e",
+          "format": "PAPERBACK",
+          "condition": "POOR",
+          "purchaseDate": "2012-06-10",
+          "pricePaid": 299,
+          "locationId": "c695781f-3246-56e2-ad87-be0b65d7b5ae"
+        },
+        {
+          "id": "af534cf7-dac4-5d2c-861d-ce978024130e",
+          "format": "HARDCOVER",
+          "condition": "NEW",
+          "purchaseDate": "2025-12-25",
+          "pricePaid": 1299,
+          "locationId": "3fbe8074-d5ab-5d63-9013-a141b8e1bcc9"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "c1a292d1-2267-5f09-ad08-171b662d58a6",
+          "startDate": "2012-06-12",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2012-07-01"
+        }
+      ],
+      "customFields": [],
+      "notes": "The paperback is falling apart; the hardcover was a Christmas present."
+    },
+    {
+      "id": "98d938ee-c7cc-56ef-84b0-ea67cb0f3421",
+      "title": "The Fellowship of the Ring",
+      "isbn": "9780547928210",
+      "publisher": "Mariner Books",
+      "publicationYear": 2012,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 1,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2013-01-15",
+      "categoryIds": [
+        "85260426-122b-588b-a5ef-1a50856b3d5c"
+      ],
+      "contributors": [
+        {
+          "name": "J. R. R. Tolkien",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "86b362d5-9221-5aaa-85b1-da7a7a17f702",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2013-01-15",
+          "pricePaid": 399,
+          "locationId": "c695781f-3246-56e2-ad87-be0b65d7b5ae"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "f54e65fd-b437-5541-b196-0dd5bd3f5f7f",
+          "startDate": "2013-01-16",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2013-03-01"
+        }
+      ],
+      "customFields": [],
+      "seriesId": "f1427ee2-b0c4-5882-9b9c-8eabf9cebb6a"
+    },
+    {
+      "id": "be1b2157-e478-56c2-a8fe-66a99ff8ea7a",
+      "title": "The Two Towers",
+      "isbn": "9780547928203",
+      "publisher": "Mariner Books",
+      "publicationYear": 2012,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 2,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2013-03-02",
+      "categoryIds": [
+        "85260426-122b-588b-a5ef-1a50856b3d5c"
+      ],
+      "contributors": [
+        {
+          "name": "J. R. R. Tolkien",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "aa6cae6e-d07b-5f62-a58f-bb9c52cfa6a6",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2013-03-02",
+          "pricePaid": 399,
+          "locationId": "c695781f-3246-56e2-ad87-be0b65d7b5ae"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "8768be2b-9ed3-52b0-ad31-5ac350f2ab25",
+          "startDate": "2013-03-03",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2013-04-15"
+        }
+      ],
+      "customFields": [],
+      "seriesId": "f1427ee2-b0c4-5882-9b9c-8eabf9cebb6a"
+    },
+    {
+      "id": "c8f39b99-a686-5b26-bc58-a0c6a93266ca",
+      "title": "The Return of the King",
+      "isbn": "9780547928197",
+      "publisher": "Mariner Books",
+      "publicationYear": 2012,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 3,
+      "readingStatus": "FINISHED",
+      "rating": 5,
+      "deleted": false,
+      "dateAdded": "2013-04-16",
+      "categoryIds": [
+        "85260426-122b-588b-a5ef-1a50856b3d5c"
+      ],
+      "contributors": [
+        {
+          "name": "J. R. R. Tolkien",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "80aca507-fe20-508a-a2d8-965a8906a318",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2013-04-16",
+          "pricePaid": 399,
+          "locationId": "c695781f-3246-56e2-ad87-be0b65d7b5ae"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "0b293c75-8056-562c-bb38-f9b25fd1cb93",
+          "startDate": "2013-04-17",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2013-06-02"
+        }
+      ],
+      "customFields": [],
+      "seriesId": "f1427ee2-b0c4-5882-9b9c-8eabf9cebb6a"
+    },
+    {
+      "id": "4635629f-36fc-5ce7-8487-169e287db257",
+      "title": "Sapiens",
+      "isbn": "9780062316097",
+      "publisher": "Harper",
+      "publicationYear": 2015,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "READING",
+      "rating": 0,
+      "deleted": false,
+      "dateAdded": "2026-08-15",
+      "categoryIds": [
+        "88c3b21d-e0d6-536a-af95-c35babccf633"
+      ],
+      "contributors": [
+        {
+          "name": "Yuval Noah Harari",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "0e58fb97-6edb-5a53-979e-40ef4c4519d3",
+          "format": "HARDCOVER",
+          "condition": "LIKE_NEW",
+          "purchaseDate": "2026-08-15",
+          "pricePaid": 699,
+          "locationId": "57b6a4e4-5de2-5891-a991-01e030244468"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "7a88e09a-8ff7-53e5-bc3f-4a05924c55cd",
+          "startDate": "2026-09-01",
+          "pagesRead": 0,
+          "percentComplete": 0
+        }
+      ],
+      "customFields": [],
+      "subtitle": "A Brief History of Humankind"
+    },
+    {
+      "id": "c894d73a-393e-50e9-92eb-5526e86889ac",
+      "title": "Thinking, Fast and Slow",
+      "isbn": "9780374533557",
+      "publisher": "Farrar, Straus and Giroux",
+      "publicationYear": 2013,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 4,
+      "deleted": false,
+      "dateAdded": "2024-01-20",
+      "categoryIds": [
+        "d079595d-6a74-5f0a-b54e-6d371de60400"
+      ],
+      "contributors": [
+        {
+          "name": "Daniel Kahneman",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "ed609fe7-f6f1-558d-97a0-914f39ef4ca7",
+          "format": "PAPERBACK",
+          "condition": "GOOD",
+          "purchaseDate": "2024-01-20",
+          "pricePaid": 550,
+          "locationId": "3fbe8074-d5ab-5d63-9013-a141b8e1bcc9"
+        }
+      ],
+      "readingSessions": [
+        {
+          "id": "7ad3f265-b1d7-5ad2-a3cb-66c93188639e",
+          "startDate": "2024-01-21",
+          "pagesRead": 0,
+          "percentComplete": 0,
+          "endDate": "2024-04-30"
+        }
+      ],
+      "customFields": []
+    },
+    {
+      "id": "14f5e92a-afee-500e-840a-2b9ac20bbc3f",
+      "title": "A Brief History of Time",
+      "isbn": "9780553380163",
+      "publisher": "Bantam",
+      "publicationYear": 1998,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "UNREAD",
+      "rating": 0,
+      "deleted": false,
+      "dateAdded": "2025-03-14",
+      "categoryIds": [
+        "7dcc80e6-eae4-5780-9f0e-62658cac9d24"
+      ],
+      "contributors": [
+        {
+          "name": "Stephen Hawking",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "c276685f-7564-5f69-80e1-1f025b83340e",
+          "format": "EBOOK",
+          "condition": "NEW",
+          "purchaseDate": "2025-03-14",
+          "pricePaid": 199
+        }
+      ],
+      "readingSessions": [],
+      "customFields": []
+    },
+    {
+      "id": "3aa40deb-97cb-5a55-a7f6-500a3756bf68",
+      "title": "The Catcher in the Rye",
+      "isbn": "9780316769488",
+      "publisher": "Little, Brown and Company",
+      "publicationYear": 1991,
+      "language": "English",
+      "pages": 0,
+      "seriesPosition": 0,
+      "readingStatus": "FINISHED",
+      "rating": 2,
+      "deleted": true,
+      "dateAdded": "2014-02-02",
+      "categoryIds": [
+        "be3d115f-eb84-510d-8af7-41e3fd5a306c"
+      ],
+      "contributors": [
+        {
+          "name": "J. D. Salinger",
+          "role": "AUTHOR"
+        }
+      ],
+      "copies": [
+        {
+          "id": "54b2ae11-3b1e-5a7a-b317-aa7bbe731b0c",
+          "format": "PAPERBACK",
+          "condition": "POOR",
+          "purchaseDate": "2014-02-02",
+          "pricePaid": 150
+        }
+      ],
+      "readingSessions": [],
+      "customFields": [],
+      "notes": "Water-damaged; replacing it."
+    }
+  ],
+  "categories": [
+    {
+      "id": "e41553b7-5171-5c08-aa71-3e31cece9537",
+      "name": "Fiction"
+    },
+    {
+      "id": "9d11ef36-8c42-5176-8bdc-2fc6a9006cb4",
+      "name": "Literary fiction",
+      "parentId": "e41553b7-5171-5c08-aa71-3e31cece9537"
+    },
+    {
+      "id": "be3d115f-eb84-510d-8af7-41e3fd5a306c",
+      "name": "Classics",
+      "parentId": "e41553b7-5171-5c08-aa71-3e31cece9537"
+    },
+    {
+      "id": "85260426-122b-588b-a5ef-1a50856b3d5c",
+      "name": "Fantasy",
+      "parentId": "e41553b7-5171-5c08-aa71-3e31cece9537"
+    },
+    {
+      "id": "504c6167-d03e-59b7-a4f8-5658815451f6",
+      "name": "Science fiction",
+      "parentId": "e41553b7-5171-5c08-aa71-3e31cece9537"
+    },
+    {
+      "id": "dd154165-6416-5bae-9932-b63de4aac910",
+      "name": "Non-fiction"
+    },
+    {
+      "id": "88c3b21d-e0d6-536a-af95-c35babccf633",
+      "name": "History",
+      "parentId": "dd154165-6416-5bae-9932-b63de4aac910"
+    },
+    {
+      "id": "7dcc80e6-eae4-5780-9f0e-62658cac9d24",
+      "name": "Science",
+      "parentId": "dd154165-6416-5bae-9932-b63de4aac910"
+    },
+    {
+      "id": "d079595d-6a74-5f0a-b54e-6d371de60400",
+      "name": "Psychology",
+      "parentId": "dd154165-6416-5bae-9932-b63de4aac910"
+    },
+    {
+      "id": "c6a3e1c5-13f2-5f37-bbcb-f3c5d4ef05b2",
+      "name": "Biography & memoir",
+      "parentId": "dd154165-6416-5bae-9932-b63de4aac910"
+    },
+    {
+      "id": "b8a2d7c1-39c9-5317-9e5a-bfe793bb39ac",
+      "name": "Indian writing"
+    }
+  ],
+  "locations": [
+    {
+      "id": "be2b7b6e-0c08-578c-83fa-d8c5d53ea368",
+      "name": "Living room"
+    },
+    {
+      "id": "cb791575-6212-5afb-91ae-8cc338a97f7e",
+      "name": "Bookcase",
+      "parentId": "be2b7b6e-0c08-578c-83fa-d8c5d53ea368"
+    },
+    {
+      "id": "c022dbf0-35a5-58c8-95d1-cd47f294c6cc",
+      "name": "Shelf 1",
+      "parentId": "cb791575-6212-5afb-91ae-8cc338a97f7e"
+    },
+    {
+      "id": "d212b16a-5c92-5ebb-a9a2-3737fba472ac",
+      "name": "Shelf 2",
+      "parentId": "cb791575-6212-5afb-91ae-8cc338a97f7e"
+    },
+    {
+      "id": "c695781f-3246-56e2-ad87-be0b65d7b5ae",
+      "name": "Shelf 3",
+      "parentId": "cb791575-6212-5afb-91ae-8cc338a97f7e"
+    },
+    {
+      "id": "724df952-6c8a-5212-a315-80c8c73bb66e",
+      "name": "Study"
+    },
+    {
+      "id": "2c2ce1b3-a43e-5340-8e2c-b60558f662c6",
+      "name": "Shelf A",
+      "parentId": "724df952-6c8a-5212-a315-80c8c73bb66e"
+    },
+    {
+      "id": "eb8bb586-0c75-5617-a739-dec58beb4481",
+      "name": "Row 1",
+      "parentId": "2c2ce1b3-a43e-5340-8e2c-b60558f662c6"
+    },
+    {
+      "id": "3fbe8074-d5ab-5d63-9013-a141b8e1bcc9",
+      "name": "Row 2",
+      "parentId": "2c2ce1b3-a43e-5340-8e2c-b60558f662c6"
+    },
+    {
+      "id": "838a5392-7b8d-578e-b633-c86b74088a25",
+      "name": "Bedroom"
+    },
+    {
+      "id": "57b6a4e4-5de2-5891-a991-01e030244468",
+      "name": "Bedside table",
+      "parentId": "838a5392-7b8d-578e-b633-c86b74088a25"
+    }
+  ],
+  "series": [
+    {
+      "id": "f1427ee2-b0c4-5882-9b9c-8eabf9cebb6a",
+      "name": "The Lord of the Rings",
+      "totalBooks": 3
+    }
+  ],
+  "wishlists": [
+    {
+      "id": "7ccf9d43-409e-5c40-8e22-870e92dccd19",
+      "name": "To buy",
+      "entries": [
+        {
+          "id": "d2317894-42c3-5fe2-be1a-5e654e6d29e3",
+          "title": "Brave New World",
+          "author": "Aldous Huxley",
+          "priority": "HIGH",
+          "expectedPrice": 399,
+          "store": "Amazon",
+          "rare": false,
+          "isbn": "9780060850524"
+        },
+        {
+          "id": "40271675-c46c-54c9-8b2b-8769eacd741f",
+          "title": "The Midnight Library",
+          "author": "Matt Haig",
+          "priority": "MEDIUM",
+          "expectedPrice": 499,
+          "store": "Crossword",
+          "rare": false,
+          "isbn": "9780525559474"
+        }
+      ]
+    },
+    {
+      "id": "cc682816-239d-5369-b4f7-b1ac1b93f57a",
+      "name": "Rare finds",
+      "entries": [
+        {
+          "id": "b153616d-a5e4-595a-b282-0871e634d2c2",
+          "title": "The Discovery of India (1946 first edition)",
+          "author": "Jawaharlal Nehru",
+          "priority": "LOW",
+          "expectedPrice": 15000,
+          "store": "Daryaganj Sunday book market",
+          "rare": true
+        }
+      ]
+    }
+  ]
+}
