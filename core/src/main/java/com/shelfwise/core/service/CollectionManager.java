@@ -14,6 +14,7 @@ import com.shelfwise.core.model.Location;
 import com.shelfwise.core.model.ReadingStatus;
 import com.shelfwise.core.model.Series;
 import com.shelfwise.core.model.Wishlist;
+import com.shelfwise.core.model.WishlistEntry;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -822,6 +823,47 @@ public class CollectionManager implements Searchable {
      */
     public boolean removeWishlist(Wishlist wishlist) {
         return wishlists.remove(wishlist);
+    }
+
+    /**
+     * Turns a wishlist entry into a book in the collection: what the "Mark
+     * as Bought" button does.
+     * <p>
+     * The order is what keeps the entry safe. {@link Wishlist#markAsBought}
+     * removes the entry, so everything that could still fail is checked
+     * before it is called: first whether the collection already has a book
+     * with this ISBN, then (inside {@code Wishlist.markAsBought}) whether the
+     * ISBN is valid at all. Only when both pass is the entry removed and the
+     * book added. Calling {@code Wishlist.markAsBought} and then
+     * {@link #addItem} the other way round lost the entry whenever the book
+     * turned out to be a duplicate.
+     *
+     * @param wishlist a wishlist in this collection
+     * @param entry    the entry that was bought; must be on that wishlist
+     * @return the new book, already added to the collection
+     * @throws DuplicateItemException   if a book with the entry's ISBN is
+     *                                  already in the collection; the entry
+     *                                  stays on the list
+     * @throws InvalidISBNException     if the entry's ISBN is unusable; the
+     *                                  entry stays on the list
+     * @throws IllegalArgumentException if the wishlist is not in this
+     *                                  collection or the entry not on it
+     */
+    public Book markAsBought(Wishlist wishlist, WishlistEntry entry)
+            throws DuplicateItemException, InvalidISBNException {
+        if (wishlist == null || !wishlists.contains(wishlist)) {
+            throw new IllegalArgumentException("That wishlist is not in this collection.");
+        }
+        // A null or unknown entry gets through here and is refused by
+        // Wishlist.markAsBought below, before anything changes.
+        Book existing = findBookByIsbn(entry == null ? null : entry.getIsbn());
+        if (existing != null) {
+            throw new DuplicateItemException(
+                    existing.getIsbn(), existing.getId(), existing.getTitle());
+        }
+        Book book = wishlist.markAsBought(entry);
+        addItem(book);
+        return book;
     }
 
     // ------------------------------------------------------------------

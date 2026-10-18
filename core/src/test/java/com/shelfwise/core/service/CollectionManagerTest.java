@@ -13,6 +13,7 @@ import com.shelfwise.core.model.Location;
 import com.shelfwise.core.model.ReadingStatus;
 import com.shelfwise.core.model.Series;
 import com.shelfwise.core.model.Wishlist;
+import com.shelfwise.core.model.WishlistEntry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -725,6 +726,86 @@ class CollectionManagerTest {
         assertTrue(m.removeWishlist(birthday));
         assertTrue(m.getWishlists().isEmpty());
         assertTrue(m.toCollectionData().getWishlists().isEmpty());
+    }
+
+    @Test
+    @DisplayName("marking an entry as bought adds the book and removes the entry")
+    void markAsBoughtAddsBook() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        WishlistEntry entry = new WishlistEntry("Glimpses of World History");
+        entry.setIsbn("0-14-303105-8");
+        wishlist.addEntry(entry);
+
+        Book book = m.markAsBought(wishlist, entry);
+
+        assertSame(book, m.findBookByIsbn(DUNE_ISBN));
+        assertTrue(wishlist.isEmpty());
+    }
+
+    @Test
+    @DisplayName("a bought entry that duplicates a book already owned stays on the wishlist")
+    void markAsBoughtDuplicateKeepsEntry() throws Exception {
+        // The D35 bug: the entry used to be removed before the duplicate
+        // was discovered, so it vanished from the list without becoming a
+        // book.
+        final CollectionManager m = new CollectionManager();
+        Book owned = m.addItem(DUNE_ISBN, "Glimpses of World History");
+        final Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        final WishlistEntry entry = new WishlistEntry("Glimpses of World History");
+        // The ISBN-10 form: still recognised as the same book.
+        entry.setIsbn("0143031058");
+        wishlist.addEntry(entry);
+
+        DuplicateItemException e = assertThrows(DuplicateItemException.class,
+                new Executable() {
+                    @Override
+                    public void execute() throws Throwable {
+                        m.markAsBought(wishlist, entry);
+                    }
+                });
+        assertEquals(owned.getId(), e.getExistingItemId());
+        assertEquals(1, wishlist.getEntryCount());
+        assertEquals(1, m.getItems().size());
+    }
+
+    @Test
+    @DisplayName("a bought entry with an invalid ISBN stays on the wishlist")
+    void markAsBoughtInvalidIsbnKeepsEntry() {
+        final CollectionManager m = new CollectionManager();
+        final Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        final WishlistEntry entry = new WishlistEntry("Dune");
+        entry.setIsbn("9780143031056");
+        wishlist.addEntry(entry);
+
+        assertThrows(InvalidISBNException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                m.markAsBought(wishlist, entry);
+            }
+        });
+        assertEquals(1, wishlist.getEntryCount());
+        assertTrue(m.getItems().isEmpty());
+    }
+
+    @Test
+    @DisplayName("marking as bought on a wishlist outside the collection is refused")
+    void markAsBoughtUnknownWishlist() {
+        final CollectionManager m = new CollectionManager();
+        final Wishlist stray = new Wishlist("Stray");
+        final WishlistEntry entry = new WishlistEntry("Dune");
+        stray.addEntry(entry);
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                m.markAsBought(stray, entry);
+            }
+        });
+        assertEquals(1, stray.getEntryCount());
     }
 
     // ------------------------------------------------------------------
