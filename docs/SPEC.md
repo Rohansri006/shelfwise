@@ -261,11 +261,12 @@ Storage is a SQL database rather than JSON files, so the schema can be reused fo
 
 | Path | Holds |
 |---|---|
-| `~/.shelfwise/settings.json` | chosen data-folder path, profile type, display name, password hash + salt |
+| `~/.shelfwise/settings.json` | data-folder path, User type (Guest/Local), display name, password hash + salt, theme, optional Google Books key (D21, L7). Read and written by `SettingsFile` |
 | `<data folder>/shelfwise.db` | the entire collection |
 | `<data folder>/backups/shelfwise-<yyyyMMdd-HHmmss>.db` | last 5, rotated |
 | `<data folder>/cache/covers/<isbn>.jpg` | fetched covers |
 | `<data folder>/cache/metadata/<isbn>.json` | fetched metadata |
+| classpath `/sample-collection.json` | the bundled sample collection: 25 books, every ISBN confirmed on Open Library (D23), loaded by `SampleCollection` |
 
 Settings sit outside the data folder because they record *where* the data folder is. The fixed `~/.shelfwise` path is computed in the **desktop** module and injected into `core`, honouring the rule that core never hardcodes paths.
 
@@ -323,13 +324,15 @@ Conflict detection compares the database file's last-modified time against the v
 
 ### 6.6 CSV — where the file-handling marks live
 
-Fixed column order, written and parsed with raw `BufferedWriter`/`BufferedReader`:
+Written and parsed with raw `BufferedWriter`/`BufferedReader` (`CsvExporter`, `CsvImporter`, layout in `CsvFormat`):
 
 ```
-title,subtitle,isbn,authors,publisher,year,pages,language,categories,location,format,condition,purchase_date,price_paid,rating,reading_status,notes
+id,title,subtitle,isbn,authors,publisher,year,pages,language,categories,location,format,condition,purchase_date,price_paid (INR),rating,reading_status,notes
 ```
 
-Multi-valued cells (`authors`, `categories`) are semicolon-separated. A field containing a comma, quote or newline is wrapped in double quotes with internal quotes doubled. One row **per copy**, so a two-copy book exports two rows and re-imports as one book with two copies. Import collects per-row errors and reports them together rather than aborting the file.
+`id` comes first so a re-import recognises books (ADR 0004); the price header names the currency, and a plain `price_paid` means the collection's own (D18). Multi-valued cells (`authors`, `categories`) are semicolon-separated; categories and locations are full paths joined by ` > `. A field containing a comma, quote or newline is wrapped in double quotes with internal quotes doubled. One row **per copy**, so a two-copy book exports two rows and re-imports as one book with two copies. Live books only, and authors only (D16). On import, columns are found by name, enum cells accept label or name, and per-row errors are collected and reported together rather than aborting the file.
+
+**Import/export, as built** *(added 18 Oct)*. Abstract `Exporter` (template method over a `BufferedWriter`) → `CsvExporter`, `JsonExporter`; abstract `Importer` (over a `BufferedReader`) → `CsvImporter`, `JsonImporter`. JSON holds everything (trash, trees, series, wishlists, history, custom fields, currency) through flat DTOs in `JsonCollection` (D19). Importing is two steps: an importer returns a `ParsedImport` (data, the file's currency, problems) without touching the collection, so the screen can warn about a currency mismatch; then `CollectionMerger` merges (D17): books present by id or ISBN are skipped and listed in an `ImportReport`, with `addAsCopies` on request; trees match by path, series and wishlists by name; merging the same file twice changes nothing. **Known limitation (E1):** a CSV row with neither an id nor an ISBN has nothing that identifies it, so re-importing it adds it again.
 
 ### 6.7 Views backing the screens
 
@@ -388,7 +391,7 @@ Each step compiles and tests green before the next begins, so `main` is always g
 1. `exception` — `ShelfWiseException` + six subclasses.
 2. `model` — five enums, `CollectionItem`, `Book`, `Copy`, `Contributor`, `Category`, `Location`, `Series`, `ReadingSession`, `Wishlist`, `WishlistEntry`, `User`/`GuestUser`/`LocalUser`.
 3. `service` — `Searchable`, `MetadataProvider`, `StorageProvider`, `BarcodeScanner`, `Syncable`, `BookMetadata`, `CollectionData`, `CollectionManager`.
-4. `storage` — `SqliteStorage implements StorageProvider` over `BookDao`, `CategoryDao`, `LocationDao`, `WishlistDao` (all `PreparedStatement` + try-with-resources), `schema.sql` bootstrap, database-file backup rotation, abstract `Exporter` → `CsvExporter`/`JsonExporter`, `CsvImporter`.
+4. `storage` — `SqliteStorage implements StorageProvider` over `BookDao`, `CategoryDao`, `LocationDao`, `WishlistDao` (all `PreparedStatement` + try-with-resources), `schema.sql` bootstrap, database-file backup rotation, abstract `Exporter` → `CsvExporter`/`JsonExporter`, abstract `Importer` → `CsvImporter`/`JsonImporter`, `CollectionMerger`, `SettingsFile`, `SampleCollection`.
 5. `metadata` — `OpenLibraryProvider`, `GoogleBooksProvider`, disk cache, demo dataset.
 
 ---
