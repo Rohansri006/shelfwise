@@ -271,6 +271,29 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("the currency survives a load and save, and can be changed")
+    void currencyKept() {
+        // Before this, toCollectionData always said INR, so a collection
+        // priced in euros was silently relabelled on its first save.
+        final CollectionManager m = new CollectionManager(
+                new CollectionData(null, null, null, null, null, null, "eur"));
+        assertEquals("EUR", m.getCurrencyCode());
+        assertEquals("EUR", m.toCollectionData().getCurrencyCode());
+
+        m.setCurrencyCode("usd");
+        assertEquals("USD", m.toCollectionData().getCurrencyCode());
+
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.setCurrencyCode("XYZ");
+            }
+        });
+        assertEquals("USD", m.getCurrencyCode());
+        assertEquals("INR", new CollectionManager().getCurrencyCode());
+    }
+
+    @Test
     @DisplayName("loading indexes every category node, not just the roots")
     void loadIndexesAllCategoryNodes() {
         Category fiction = new Category("Fiction");

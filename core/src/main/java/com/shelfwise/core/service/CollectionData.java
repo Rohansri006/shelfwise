@@ -107,11 +107,15 @@ public class CollectionData {
      * {@code IllegalArgumentException} for an unknown code; it is caught and
      * rethrown only to put the offending value in the message.
      *
+     * <p>
+     * Package-private rather than private so {@link CollectionManager}, in
+     * the same package, validates a changed currency with the same rule.
+     *
      * @param code the code to check
      * @return the code in upper case
      * @throws IllegalArgumentException if null or not a real currency
      */
-    private static String validCurrency(String code) {
+    static String validCurrency(String code) {
         if (code == null) {
             throw new IllegalArgumentException("Currency code must not be null.");
         }
