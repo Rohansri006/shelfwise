@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Browse page (E15-E30, E39, E49-E53): the collection as a grid or a
+     table, with search, a status filter, the filter drawer on the left and the
+     details panel on the right. Loaded by MainController into the window's
+     centre, underneath the toast. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<!-- Q5: drag dividers. The page and the details panel share this SplitPane;
+     a "closed" panel is snapped to zero width, its grip left at the edge. -->
+<SplitPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.shelfwise.desktop.ui.BrowseController"
+           fx:id="mainSplit" styleClass="main-split">
+
+    <VBox fx:id="browsePage" spacing="14">
+        <!-- #4: only 6px on the right, so the grid's scrollbar sits next to the
+             detail divider; the toolbar rows keep their own right padding. -->
+        <padding><Insets top="20" right="6" bottom="0" left="24"/></padding>
+
+        <HBox styleClass="toolbar-row">
+            <padding><Insets right="18"/></padding>
+            <VBox spacing="2">
+                <Label text="Collection" styleClass="page-title"/>
+                <Label fx:id="countLabel" styleClass="muted"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Add book" styleClass="accent-button" onAction="#onAddBook">
+                <graphic><FontIcon iconLiteral="mdi2b-book-plus" iconSize="16"/></graphic>
+            </Button>
+        </HBox>
+
+        <HBox styleClass="toolbar-row">
+            <padding><Insets right="18"/></padding>
+            <StackPane alignment="CENTER_LEFT">
+                <TextField fx:id="searchField" promptText="Search title, author, ISBN, publisher…"
+                           styleClass="search-field"/>
+                <FontIcon iconLiteral="mdi2m-magnify" iconSize="18" mouseTransparent="true"
+                          translateX="9"/>
+            </StackPane>
+            <!-- #7: a ComboBox drops its list down below the field; a ChoiceBox on
+                 macOS opens it over the field, centred on the chosen item. -->
+            <ComboBox fx:id="statusChoice" styleClass="combo" minWidth="-Infinity"/>
+            <Button fx:id="filtersButton" text="Filters" styleClass="plain-button" minWidth="-Infinity"
+                    onAction="#onToggleFilters">
+                <graphic><FontIcon iconLiteral="mdi2f-filter-variant" iconSize="16"/></graphic>
+            </Button>
+            <Region HBox.hgrow="ALWAYS"/>
+            <!-- #1 (E25): cover size, shown in grid view only. -->
+            <ComboBox fx:id="sizeChoice" styleClass="combo" minWidth="-Infinity"/>
+            <HBox styleClass="segmented">
+                <ToggleButton fx:id="gridToggle" styleClass="segment" selected="true"
+                              onAction="#onShowGrid">
+                    <graphic><FontIcon iconLiteral="mdi2v-view-grid-outline" iconSize="18"/></graphic>
+                </ToggleButton>
+                <ToggleButton fx:id="tableToggle" styleClass="segment" onAction="#onShowTable">
+                    <graphic><FontIcon iconLiteral="mdi2f-format-list-bulleted" iconSize="18"/></graphic>
+                </ToggleButton>
+            </HBox>
+        </HBox>
+
+        <HBox fx:id="chipRow" spacing="8"/>
+
+        <SplitPane fx:id="drawerSplit" styleClass="drawer-split" VBox.vgrow="ALWAYS">
+            <StackPane fx:id="results">
+                <ScrollPane fx:id="gridScroll" fitToWidth="true" hbarPolicy="NEVER">
+                    <TilePane fx:id="grid" styleClass="book-grid"/>
+                </ScrollPane>
+                <TableView fx:id="table" visible="false">
+                    <StackPane.margin><Insets bottom="20"/></StackPane.margin>
+                </TableView>
+                <Label fx:id="emptyLabel" text="No books match." styleClass="empty-state"
+                       visible="false"/>
+            </StackPane>
+        </SplitPane>
+
+        <!-- E39 / D11: shown only while two or more books are picked. -->
+        <HBox fx:id="bulkBar" styleClass="bulk-bar" visible="false" managed="false">
+            <VBox.margin><Insets right="18" bottom="14"/></VBox.margin>
+            <Label fx:id="bulkCount" styleClass="bulk-count"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Set location…" styleClass="plain-button" onAction="#onBulkLocation">
+                <graphic><FontIcon iconLiteral="mdi2m-map-marker-outline" iconSize="16"/></graphic>
+            </Button>
+            <Button text="Add category…" styleClass="plain-button" onAction="#onBulkCategory">
+                <graphic><FontIcon iconLiteral="mdi2t-tag-outline" iconSize="16"/></graphic>
+            </Button>
+            <MenuButton fx:id="bulkStatus" text="Set status" styleClass="plain-button"/>
+            <Button text="Move to Trash" styleClass="danger-button" onAction="#onBulkTrash">
+                <graphic><FontIcon iconLiteral="mdi2d-delete-outline" iconSize="16"/></graphic>
+            </Button>
+            <Button styleClass="icon-button" onAction="#onClearPicks">
+                <graphic><FontIcon iconLiteral="mdi2c-close" iconSize="18"/></graphic>
+                <tooltip><Tooltip text="Clear selection (Esc)"/></tooltip>
+            </Button>
+        </HBox>
+    </VBox>
+
+    <!-- Built here but not shown: the controller adds them to the split panes. -->
+    <fx:define>
+        <!-- #2 (E27): one scroll area holding two collapsible sections. Each tree is
+             sized to its visible rows by the controller, so nothing pads the gap. -->
+        <ScrollPane fx:id="drawer" styleClass="drawer" fitToWidth="true" hbarPolicy="NEVER"
+                    prefWidth="250" minWidth="0">
+            <VBox spacing="6">
+                <TitledPane text="CATEGORIES" styleClass="filter-section" expanded="true">
+                    <TreeView fx:id="categoryTree" showRoot="false"/>
+                </TitledPane>
+                <TitledPane text="LOCATIONS" styleClass="filter-section" expanded="true">
+                    <TreeView fx:id="locationTree" showRoot="false"/>
+                </TitledPane>
+            </VBox>
+        </ScrollPane>
+        <ScrollPane fx:id="detailScroll" styleClass="detail-scroll" fitToWidth="true" hbarPolicy="NEVER"
+                    minWidth="0">
+            <VBox fx:id="detail" styleClass="detail-panel"/>
+        </ScrollPane>
+    </fx:define>
+</SplitPane>

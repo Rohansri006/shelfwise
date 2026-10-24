@@ -144,6 +144,8 @@ public class MainController implements Shell {
             ComingSoonPage page = new ComingSoonPage(ids[i]);
             addPage(ids[i], page, page.getView());
         }
+        // Each real page replaces its placeholder as it is ported (E152).
+        loadPage(PageId.BROWSE, "browse-view.fxml");
         applyTheme(session.getSettings().getTheme() == Settings.Theme.DARK);
         updateCounts();
         show(PageId.BROWSE);
