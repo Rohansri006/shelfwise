@@ -609,6 +609,70 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("unfile moves every book in the subtree, trashed ones too, to the target, after which the delete succeeds")
+    void unfileMovesBooksToTarget() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Category fiction = new Category("Fiction");
+        Category scifi = new Category("Science fiction");
+        Category cyber = new Category("Cyberpunk");
+        m.addCategory(fiction);
+        m.addCategory(scifi, fiction);
+        m.addCategory(cyber, scifi);
+        Book dune = m.addItem("Dune");
+        dune.addCategoryId(scifi.getId());
+        // Filed twice inside the subtree, and once already under the target.
+        Book neuromancer = m.addItem("Neuromancer");
+        neuromancer.addCategoryId(scifi.getId());
+        neuromancer.addCategoryId(cyber.getId());
+        neuromancer.addCategoryId(fiction.getId());
+        m.moveToTrash(neuromancer.getId());
+
+        assertEquals(2, m.unfile(scifi, fiction));
+
+        assertEquals(List.of(fiction.getId()), dune.getCategoryIds());
+        // Not filed under "Fiction" twice.
+        assertEquals(List.of(fiction.getId()), neuromancer.getCategoryIds());
+        m.deleteCategory(scifi);
+        assertNull(m.findCategoryById(cyber.getId()));
+    }
+
+    @Test
+    @DisplayName("unfile with no target removes the filings and leaves other categories alone")
+    void unfileRemovesFilings() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Category scifi = new Category("Science fiction");
+        Category classics = new Category("Classics");
+        m.addCategory(scifi);
+        m.addCategory(classics);
+        Book dune = m.addItem("Dune");
+        dune.addCategoryId(scifi.getId());
+        dune.addCategoryId(classics.getId());
+        Book other = m.addItem("Emma");
+        other.addCategoryId(classics.getId());
+
+        assertEquals(1, m.unfile(scifi, null));
+
+        assertEquals(List.of(classics.getId()), dune.getCategoryIds());
+        assertEquals(List.of(classics.getId()), other.getCategoryIds());
+    }
+
+    @Test
+    @DisplayName("unfile refuses a target inside the subtree being emptied")
+    void unfileTargetInsideRefused() {
+        final CollectionManager m = new CollectionManager();
+        final Category fiction = new Category("Fiction");
+        final Category scifi = new Category("Science fiction");
+        m.addCategory(fiction);
+        m.addCategory(scifi, fiction);
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() {
+                m.unfile(fiction, scifi);
+            }
+        });
+    }
+
+    @Test
     @DisplayName("a category not added to the manager is refused")
     void unknownCategoryRefused() {
         final CollectionManager m = new CollectionManager();
@@ -687,6 +751,43 @@ class CollectionManagerTest {
 
         assertNull(m.findLocationById(shelf.getId()));
         assertNull(m.findLocationById(row.getId()));
+    }
+
+    @Test
+    @DisplayName("unshelve moves every copy inside the location, trashed books' too, to the target")
+    void unshelveMovesCopies() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Location shelf = Location.createShelfWithRows("Study shelf", 2);
+        Location box = new Location("Box");
+        m.addLocation(shelf);
+        m.addLocation(box);
+        Location row1 = shelf.getChildren().get(0);
+        Book dune = m.addItem("Dune");
+        dune.getCopies().get(0).setLocationId(row1.getId());
+        Book trashed = m.addItem("Emma");
+        trashed.getCopies().get(0).setLocationId(shelf.getId());
+        m.moveToTrash(trashed.getId());
+
+        assertEquals(2, m.unshelve(shelf, box));
+
+        assertEquals(box.getId(), dune.getCopies().get(0).getLocationId());
+        assertEquals(box.getId(), trashed.getCopies().get(0).getLocationId());
+        m.deleteLocation(shelf);
+        assertNull(m.findLocationById(row1.getId()));
+    }
+
+    @Test
+    @DisplayName("unshelve with no target leaves the copies unshelved")
+    void unshelveWithoutTarget() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Location shelf = new Location("Study shelf");
+        m.addLocation(shelf);
+        Book dune = m.addItem("Dune");
+        dune.getCopies().get(0).setLocationId(shelf.getId());
+
+        assertEquals(1, m.unshelve(shelf, null));
+
+        assertNull(dune.getCopies().get(0).getLocationId());
     }
 
     @Test
