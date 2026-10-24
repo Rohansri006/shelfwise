@@ -104,6 +104,32 @@ class WishlistTest {
     }
 
     @Test
+    @DisplayName("an ISBN already on the list is refused, however it is written; entries without one are not compared")
+    void sameIsbnRefused() {
+        final Wishlist w = new Wishlist("Birthday ideas");
+        WishlistEntry first = new WishlistEntry("Glimpses of World History");
+        first.setIsbn("9780143031055");
+        w.addEntry(first);
+
+        // The ISBN-10 form of the same book, under another title.
+        final WishlistEntry again = new WishlistEntry("Glimpses (paperback)");
+        again.setIsbn("0-14-303105-8");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                new Executable() {
+                    @Override
+                    public void execute() {
+                        w.addEntry(again);
+                    }
+                });
+        assertTrue(e.getMessage().contains("same ISBN"), e.getMessage());
+        assertSame(first, w.findEntryByIsbn("0143031058"));
+
+        w.addEntry(new WishlistEntry("No ISBN yet"));
+        w.addEntry(new WishlistEntry("No ISBN either"));
+        assertEquals(3, w.getEntryCount());
+    }
+
+    @Test
     @DisplayName("removeEntry reports whether the entry was there")
     void removeEntry() {
         Wishlist w = new Wishlist("Birthday ideas");
