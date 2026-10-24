@@ -1,0 +1,18 @@
+/* Dark theme. Colours only; layout lives in app.css. */
+/* .context-menu as well: the right-click menu is its own popup window, and after a
+   theme switch it can lose sight of the window's .root, so its colour lookups failed
+   and the hover highlight vanished. Defined on the menu itself, they
+   are always found. */
+.root, .context-menu {
+    /* Q3/Q6: #0ee3d8 cyan; text ON the accent is near-black for contrast. */
+    -accent: #0ee3d8;
+    -accent-soft: rgba(14, 227, 216, 0.14);
+    -on-accent: #04201f;
+    -bg: #121316;
+    -surface: #1a1b1f;
+    -surface-2: #23252b;
+    -border: #2e3038;
+    -text: #e8e9ed;
+    -text-muted: #9a9daa;
+    -danger: #f87171;
+}

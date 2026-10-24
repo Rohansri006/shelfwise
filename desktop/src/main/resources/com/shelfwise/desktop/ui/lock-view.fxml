@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The lock screen (E44, E105, E106). Covers the whole window;
+     only the password field and Unlock lead in. -->
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<StackPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.shelfwise.desktop.ui.LockController"
+           styleClass="overlay, add-page">
+    <VBox spacing="14" alignment="CENTER" maxWidth="340">
+        <FontIcon iconLiteral="mdi2l-lock-outline" iconSize="48" styleClass="empty-icon"/>
+        <Label text="ShelfWise" styleClass="page-title"/>
+        <Label fx:id="welcome" styleClass="muted"/>
+        <PasswordField fx:id="passwordField" promptText="Password" maxWidth="Infinity"/>
+        <Label fx:id="errorLabel" styleClass="error-text"/>
+        <Button text="Unlock" styleClass="accent-button" maxWidth="Infinity" defaultButton="true"
+                onAction="#onUnlock"/>
+        <Button text="Forgot password?" styleClass="link-button" onAction="#onForgot"/>
+        <Label fx:id="forgotNote" wrapText="true" styleClass="muted" visible="false" managed="false"
+               text="The password locks the app; it does not encrypt your collection. To reset it, close ShelfWise and remove the &quot;user&quot; entry from ~/.shelfwise/settings.json. The next launch asks you to choose again."/>
+        <Button text="Quit" styleClass="plain-button" onAction="#onQuit"/>
+    </VBox>
+</StackPane>

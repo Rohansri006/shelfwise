@@ -1,0 +1,1121 @@
+/*
+ * Layout and component styling for every screen.
+ * Every colour comes from a looked-up variable (-accent, -surface, ...)
+ * defined in theme-dark.css or theme-light.css, so switching theme swaps
+ * one small file.
+ */
+
+.root {
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+    -fx-background-color: -bg;
+}
+
+.label {
+    -fx-text-fill: -text;
+}
+
+.muted {
+    -fx-text-fill: -text-muted;
+}
+
+.ikonli-font-icon {
+    -fx-icon-color: -text-muted;
+}
+
+/* ---------------------------------------------------------------- sidebar */
+
+.sidebar {
+    -fx-background-color: -surface;
+    -fx-border-color: transparent -border transparent transparent;
+    -fx-padding: 14 10 14 10;
+    -fx-spacing: 4;
+}
+
+.app-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 8 10 8 10;
+    -fx-text-fill: -text;
+    -fx-alignment: center-left;
+    -fx-graphic-text-gap: 12;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: -surface-2;
+}
+
+.nav-button:selected {
+    -fx-background-color: -accent-soft;
+    -fx-text-fill: -accent;
+    -fx-font-weight: bold;
+}
+
+.nav-button:selected .ikonli-font-icon {
+    -fx-icon-color: -accent;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+}
+
+.icon-button:hover {
+    -fx-background-color: -surface-2;
+}
+
+.sidebar-stats {
+    -fx-padding: 8 10 4 10;
+}
+
+/* Collapsed: the rail. Labels hidden by the controller; this tightens padding. */
+.sidebar.collapsed {
+    -fx-padding: 14 6 14 6;
+}
+
+.sidebar.collapsed .nav-button {
+    -fx-alignment: center;
+    -fx-padding: 9;
+}
+
+/* ---------------------------------------------------------------- toolbar */
+
+.page-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.toolbar-row {
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+}
+
+.search-field {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: -text;
+    -fx-prompt-text-fill: -text-muted;
+    -fx-padding: 7 10 7 32;
+    -fx-pref-width: 320;
+    -fx-min-width: 150;
+}
+
+.search-field:focused {
+    -fx-border-color: -accent;
+}
+
+.combo, .plain-button {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 4 8 4 8;
+    -fx-cursor: hand;
+}
+
+.combo .list-cell, .plain-button {
+    -fx-text-fill: -text;
+    -fx-background-color: transparent;
+}
+
+.combo .arrow {
+    -fx-background-color: -text-muted;
+}
+
+.combo .arrow-button {
+    -fx-background-color: transparent;
+}
+
+/* The drop-down list that opens below the field. */
+.combo .combo-box-popup .list-view {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 4;
+}
+
+.combo .combo-box-popup .list-cell {
+    -fx-background-radius: 6;
+    -fx-padding: 6 10 6 10;
+}
+
+.combo .combo-box-popup .list-cell:hover,
+.combo .combo-box-popup .list-cell:selected {
+    -fx-background-color: -accent-soft;
+    -fx-text-fill: -accent;
+}
+
+.plain-button:hover, .combo:hover {
+    -fx-border-color: -accent;
+}
+
+.plain-button.active {
+    -fx-border-color: -accent;
+    -fx-text-fill: -accent;
+}
+
+.segmented {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 2;
+    -fx-spacing: 2;
+}
+
+.segment {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 5 8 5 8;
+    -fx-cursor: hand;
+}
+
+.segment:selected {
+    -fx-background-color: -accent-soft;
+}
+
+.segment:selected .ikonli-font-icon {
+    -fx-icon-color: -accent;
+}
+
+.accent-button {
+    -fx-background-color: -accent;
+    -fx-text-fill: -on-accent;
+    -fx-background-radius: 8;
+    -fx-padding: 7 14 7 14;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.accent-button .ikonli-font-icon {
+    -fx-icon-color: -on-accent;
+}
+
+/* ---------------------------------------------------------------- chips */
+
+.chip {
+    -fx-background-color: -accent-soft;
+    -fx-background-radius: 999;
+    -fx-padding: 3 6 3 10;
+    -fx-spacing: 4;
+    -fx-alignment: center-left;
+}
+
+.chip .label {
+    -fx-text-fill: -accent;
+}
+
+.chip .icon-button {
+    -fx-padding: 2;
+}
+
+.chip .ikonli-font-icon {
+    -fx-icon-color: -accent;
+}
+
+/* ---------------------------------------------------------------- filter drawer */
+
+.drawer, .drawer > .viewport {
+    -fx-background-color: -surface;
+    -fx-background: -surface;
+}
+
+.drawer {
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 8;
+}
+
+/* #2: collapsible filter sections (TitledPane), styled as plain headers. */
+.filter-section > .title {
+    -fx-background-color: transparent;
+    -fx-padding: 6 4 6 4;
+    -fx-cursor: hand;
+}
+
+.filter-section > .title > .text {
+    -fx-fill: -text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.filter-section > .title > .arrow-button > .arrow {
+    -fx-background-color: -text-muted;
+}
+
+.filter-section > .content {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0 0 6 0;
+}
+
+.section-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-muted;
+}
+
+.tree-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.tree-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text;
+    -fx-padding: 4 6 4 6;
+}
+
+.tree-cell:selected {
+    -fx-background-color: -accent-soft;
+    -fx-text-fill: -accent;
+    -fx-background-radius: 6;
+}
+
+.tree-cell .tree-disclosure-node .arrow {
+    -fx-background-color: -text-muted;
+}
+
+/* ---------------------------------------------------------------- grid */
+
+.scroll-pane, .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.book-grid {
+    -fx-hgap: 22;
+    -fx-vgap: 26;
+    -fx-padding: 4 4 24 4;
+}
+
+.book-card {
+    -fx-spacing: 6;
+    -fx-padding: 8;
+    -fx-background-radius: 12;
+    -fx-cursor: hand;
+}
+
+.book-card:hover {
+    -fx-background-color: -surface-2;
+}
+
+.book-card.selected {
+    -fx-background-color: -accent-soft;
+}
+
+.cover-initials {
+    -fx-text-fill: rgba(255, 255, 255, 0.95);
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.cover-title {
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
+    -fx-font-size: 11px;
+}
+
+.card-title {
+    -fx-font-weight: bold;
+}
+
+.card-author {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+}
+
+.status-dot-reading { -fx-fill: #22c55e; }
+.status-dot-finished { -fx-fill: #38bdf8; }
+.status-dot-unread { -fx-fill: #94a3b8; }
+.status-dot-abandoned { -fx-fill: #f59e0b; }
+
+/* ---------------------------------------------------------------- table (dense) */
+
+.table-view {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 4;
+    -fx-fixed-cell-size: 30;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: -surface;
+}
+
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: -surface;
+    -fx-border-color: transparent transparent -border transparent;
+    -fx-size: 32;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: -text-muted;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-alignment: center-left;
+}
+
+.table-row-cell {
+    -fx-background-color: -surface;
+    -fx-table-cell-border-color: transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: -surface-2;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: -accent-soft;
+}
+
+.table-cell {
+    -fx-text-fill: -text;
+    -fx-padding: 0 8 0 8;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: -accent;
+}
+
+/* ---------------------------------------------------------------- detail panel */
+
+.detail-panel {
+    -fx-background-color: -surface;
+    -fx-padding: 16 18 16 18;
+    -fx-spacing: 12;
+}
+
+.detail-title {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+}
+
+.detail-subtitle {
+    -fx-text-fill: -text-muted;
+}
+
+.stars {
+    -fx-text-fill: #f59e0b;
+    -fx-font-size: 15px;
+}
+
+.status-chip {
+    -fx-background-color: -accent-soft;
+    -fx-background-radius: 999;
+    -fx-padding: 2 10 2 10;
+    -fx-text-fill: -accent;
+    -fx-font-size: 12px;
+}
+
+.copy-row {
+    -fx-background-color: -surface-2;
+    -fx-background-radius: 8;
+    -fx-padding: 8 10 8 10;
+    -fx-spacing: 2;
+}
+
+.empty-state {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 15px;
+}
+
+/* ---------------------------------------------------------------- scrollbars */
+
+.scroll-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 2;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: -border;
+    -fx-background-radius: 999;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: -text-muted;
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 10;
+}
+
+.scroll-bar:horizontal {
+    -fx-pref-height: 10;
+}
+
+.detail-scroll, .detail-scroll > .viewport {
+    -fx-background-color: -surface;
+    -fx-background: -surface;
+}
+
+.detail-scroll {
+    -fx-border-color: transparent transparent transparent -border;
+}
+
+.scroll-pane > .corner, .tree-view .corner, .table-view .corner {
+    -fx-background-color: transparent;
+}
+
+/* ---------------------------------------------------------------- split panes (Q5) */
+
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-box-border: transparent;
+}
+
+/* Every divider is a slim strip with a three-dot grip, so it reads as
+   "drag me" - and stays visible at the edge when its panel is snapped shut. */
+.split-pane > .split-pane-divider {
+    -fx-background-color: transparent;
+    -fx-padding: 0 5 0 5;
+    -fx-cursor: h-resize;
+}
+
+.split-pane > .split-pane-divider:hover {
+    -fx-background-color: -accent-soft;
+}
+
+/* #5: the divider itself draws nothing but the grip, so no line runs
+   through the dots; the separating line is the detail panel's left border. */
+
+/* The skin gives each divider a grabber node; modena leaves it unstyled.
+   -fx-shape draws three dots stacked vertically, filled with the muted colour. */
+.split-pane-divider > .vertical-grabber,
+.split-pane-divider > .horizontal-grabber {
+    -fx-shape: "M2,0 A2,2 0 1,1 1.999,0 Z M2,8 A2,2 0 1,1 1.999,8 Z M2,16 A2,2 0 1,1 1.999,16 Z";
+    -fx-scale-shape: true;
+    -fx-background-color: -text-muted;
+    -fx-padding: 10 2 10 2;
+}
+
+.split-pane-divider:hover > .vertical-grabber,
+.split-pane-divider:hover > .horizontal-grabber {
+    -fx-background-color: -accent;
+}
+
+
+/* #2: each filter tree is exactly as tall as its rows and the drawer scrolls
+   as a whole, so the trees' own scrollbars are never needed. */
+.filter-section .tree-view .scroll-bar {
+    visibility: hidden;
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+}
+
+/* The cover bookmark: fill comes from its status-dot-* class. Its edge is
+   a slightly bigger copy behind it (no -fx-effect: see bookmark() in the
+   controller), so it reads on light and dark covers alike. */
+.bookmark-edge {
+    -fx-fill: rgba(0, 0, 0, 0.35);
+}
+
+/* ---------------------------------------------------------------- selection, toast, sidebar badge (E39, E47, E49) */
+
+/* Trash count, laid over the nav button's right end. */
+.nav-badge {
+    -fx-background-color: -surface-2;
+    -fx-background-radius: 999;
+    -fx-padding: 0 7 0 7;
+    -fx-font-size: 11px;
+    -fx-text-fill: -text-muted;
+}
+
+/* A picked cover: accent outline on the card, a tick on the cover. */
+.book-card.picked {
+    -fx-background-color: -accent-soft;
+    -fx-border-color: -accent;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    /* The border takes 2px; shrink the padding so nothing shifts when picked. */
+    -fx-padding: 6;
+}
+
+/* The tick sits on a solid disc so it reads on any cover colour. */
+.pick-tick-disc {
+    -fx-fill: -surface;
+}
+
+.pick-tick {
+    -fx-icon-color: -accent;
+}
+
+.bulk-bar {
+    -fx-background-color: -surface;
+    -fx-border-color: -accent;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 8 10 8 14;
+    -fx-spacing: 8;
+    -fx-alignment: center-left;
+}
+
+.bulk-count {
+    -fx-font-weight: bold;
+}
+
+.danger-button {
+    -fx-background-color: transparent;
+    -fx-border-color: -danger;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: -danger;
+    -fx-padding: 4 8 4 8;
+    -fx-cursor: hand;
+}
+
+.danger-button .ikonli-font-icon {
+    -fx-icon-color: -danger;
+}
+
+.danger-button:hover {
+    -fx-background-color: rgba(220, 38, 38, 0.12);
+}
+
+/* A MenuButton styled as plain-button keeps its own arrow; match the text colour. */
+.plain-button > .label {
+    -fx-text-fill: -text;
+}
+
+.plain-button > .arrow-button > .arrow {
+    -fx-background-color: -text-muted;
+}
+
+.toast {
+    -fx-background-color: -text;
+    -fx-background-radius: 999;
+    -fx-padding: 8 16 8 16;
+}
+
+.toast-text {
+    -fx-text-fill: -bg;
+}
+
+/* E74/E76: the toast's one action. Same colour as the toast text, bold and
+   underlined: the accent would be cyan on a near-white pill in dark mode. */
+.toast-action {
+    -fx-background-color: transparent;
+    -fx-text-fill: -bg;
+    -fx-font-weight: bold;
+    -fx-underline: true;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+/* E79: the empty Trash's icon. */
+.empty-icon {
+    -fx-icon-color: -text-muted;
+}
+
+/* E53: on the icon rail the Trash badge is just a dot. */
+.nav-badge.dot {
+    -fx-background-color: -accent;
+    -fx-padding: 0;
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+}
+
+/* ---------------------------------------------------------------- Add page */
+
+/* Inputs on the Add page follow the theme (Modena's defaults are light-only).
+   Scoped to the page so the Browse search field keeps its own look. */
+.add-page .text-field, .add-page .text-area, .add-page .date-picker > .text-field,
+.picker-popup .text-field {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: -text;
+    -fx-prompt-text-fill: -text-muted;
+    -fx-highlight-fill: -accent-soft;
+    -fx-highlight-text-fill: -text;
+}
+
+.add-page .text-area .content {
+    -fx-background-color: -surface;
+    -fx-background-radius: 8;
+}
+
+.add-page .text-field:focused, .add-page .text-area:focused, .picker-popup .text-field:focused {
+    -fx-border-color: -accent;
+}
+
+.add-page .date-picker {
+    -fx-background-color: transparent;
+}
+
+.add-page .date-picker > .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.add-page .date-picker > .arrow-button > .arrow {
+    -fx-background-color: -text-muted;
+}
+
+.field-label {
+    -fx-text-fill: -text-muted;
+}
+
+/* E63: a field the model refused. Wins over :focused, so it stays red while typed in. */
+.add-page .field-error, .add-page .field-error:focused,
+.add-page .date-picker.field-error > .text-field {
+    -fx-border-color: -danger;
+    -fx-border-width: 1.5;
+}
+
+.add-page VBox.field-error {
+    -fx-border-color: -danger;
+    -fx-border-radius: 8;
+    -fx-padding: 6;
+}
+
+.error-text {
+    -fx-text-fill: -danger;
+}
+
+/* A text-only button for "+ Add ..." links inside the form. */
+.link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -accent;
+    -fx-padding: 2 6 2 6;
+    -fx-cursor: hand;
+}
+
+.link-button .ikonli-font-icon {
+    -fx-icon-color: -accent;
+}
+
+.link-button:hover {
+    -fx-underline: true;
+}
+
+.subsection-head {
+    -fx-alignment: center-left;
+    -fx-padding: 6 0 0 0;
+}
+
+.form-actions {
+    -fx-padding: 10 0 0 0;
+    -fx-border-color: -border transparent transparent transparent;
+}
+
+/* E35 / E63: the form's banner, coloured by kind. */
+.banner {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 12 10 14;
+    -fx-spacing: 12;
+    -fx-alignment: center-left;
+}
+
+.banner.info {
+    -fx-background-color: -accent-soft;
+    -fx-border-color: -accent;
+}
+
+.banner.warn {
+    -fx-background-color: rgba(245, 158, 11, 0.12);
+    -fx-border-color: #f59e0b;
+}
+
+.banner.error {
+    -fx-background-color: rgba(220, 38, 38, 0.12);
+    -fx-border-color: -danger;
+}
+
+.hint .label {
+    -fx-text-fill: #f59e0b;
+    -fx-font-size: 12px;
+}
+
+/* E62 / E65: the tree popup. */
+.picker-popup {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+}
+
+/* E95: rows that cannot be picked (Move to… greys the node and everything under it).
+   Modena only dims a disabled tree row while it is selected, so this dims the rest. */
+.picker-popup .tree-cell:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* E97: the right-click menu. .label above gives every label the theme's text colour,
+   so the menu needs the theme's surface behind it too, or dark mode draws light
+   text on Modena's white menu. Disabled items keep Modena's 0.4 opacity. */
+.context-menu {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 4;
+}
+
+.context-menu .menu-item {
+    -fx-background-radius: 6;
+    -fx-padding: 5 12 5 10;
+}
+
+.context-menu .menu-item .label {
+    -fx-text-fill: -text;
+}
+
+.context-menu .menu-item:focused {
+    -fx-background-color: -accent-soft;
+}
+
+.context-menu .menu-item:focused .label {
+    -fx-text-fill: -accent;
+}
+
+.context-menu .separator:horizontal .line {
+    -fx-border-color: -border transparent transparent transparent;
+}
+
+/* ---------------------------------------------------------------- Bulk scan */
+
+.preview-frame {
+    -fx-background-color: #000000;
+    -fx-background-radius: 12;
+    -fx-border-color: -border;
+    -fx-border-width: 3;
+    -fx-border-radius: 12;
+}
+
+/* E68: a read barcode flashes the frame. */
+.preview-frame.flash {
+    -fx-border-color: -accent;
+}
+
+.no-camera .label {
+    -fx-text-fill: #c8cad3;
+}
+
+.no-camera .ikonli-font-icon {
+    -fx-icon-color: #c8cad3;
+}
+
+.batch-row {
+    -fx-background-color: -surface;
+    -fx-background-radius: 10;
+    -fx-padding: 8 10 8 12;
+}
+
+.queue-ready {
+    -fx-text-fill: #22c55e;
+}
+
+.queue-attention {
+    -fx-text-fill: #f59e0b;
+}
+
+/* E67: the row a repeat scan points at. */
+.table-row-cell.flash, .table-row-cell.flash:odd {
+    -fx-background-color: -accent-soft;
+}
+
+/* Segment labels (Add page's Single / Bulk scan) follow the theme. */
+.segment {
+    -fx-text-fill: -text-muted;
+}
+
+.segment:selected {
+    -fx-text-fill: -accent;
+    -fx-font-weight: bold;
+}
+
+/* The queue's rows are taller than Browse's: each shows a small cover. */
+.queue-table {
+    -fx-fixed-cell-size: 64;
+}
+
+/* ---------------------------------------------------------------- Settings, first run, lock */
+
+/* E107: one card per Settings section; also the first-run steps (E104). */
+.settings-card {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 16;
+    -fx-spacing: 12;
+}
+
+/* A label column, so every control in a card starts at the same x. */
+.setting-name {
+    -fx-min-width: 150;
+    -fx-pref-width: 150;
+    -fx-text-fill: -text-muted;
+}
+
+/* E104: the Guest / Local choice, a toggle drawn as a card. */
+.choice-card {
+    -fx-background-color: -surface-2;
+    -fx-border-color: -border;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 14;
+    -fx-cursor: hand;
+    -fx-alignment: top-left;
+}
+
+.choice-card:selected {
+    -fx-background-color: -accent-soft;
+    -fx-border-color: -accent;
+}
+
+.choice-card:selected .ikonli-font-icon {
+    -fx-icon-color: -accent;
+}
+
+/* E103-E106: first run and the lock screen cover the whole window, sidebar included. */
+.overlay {
+    -fx-background-color: -bg;
+}
+
+/* ---------------------------------------------------------------- wishlist (E111-E126) */
+
+/* The lists on the left: the same look as the drawer's trees. */
+.wish-lists {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 4;
+}
+
+.wish-lists .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text;
+    -fx-padding: 6 8 6 8;
+}
+
+.wish-lists .list-cell:selected {
+    -fx-background-color: -accent-soft;
+    -fx-text-fill: -accent;
+    -fx-background-radius: 6;
+}
+
+/* Text rows, no covers: a little taller than Browse's table so the Owned badge fits. */
+.wish-table {
+    -fx-fixed-cell-size: 36;
+}
+
+/* E119: the priority dot. Fixed colours, readable on both themes. */
+.priority-dot-high { -fx-fill: #ef4444; }
+.priority-dot-medium { -fx-fill: #f59e0b; }
+.priority-dot-low { -fx-fill: #94a3b8; }
+
+/* E117: "Owned" / "In Trash" after the title. */
+.owned-badge {
+    -fx-background-color: -accent-soft;
+    -fx-background-radius: 999;
+    -fx-padding: 1 8 1 8;
+    -fx-text-fill: -accent;
+    -fx-font-size: 11px;
+}
+
+/* The entry dialog takes the window's theme (its stylesheets are copied over). */
+.dialog-pane.add-page {
+    -fx-background-color: -surface;
+}
+
+.dialog-pane.add-page > .content .label {
+    -fx-text-fill: -text;
+}
+
+.dialog-pane.add-page > .content .muted {
+    -fx-text-fill: -text-muted;
+}
+
+.dialog-pane.add-page > .content .check-box {
+    -fx-text-fill: -text;
+}
+
+.dialog-pane.add-page > .content .error-text {
+    -fx-text-fill: -danger;
+}
+
+.dialog-pane.add-page > .button-bar > .container {
+    -fx-background-color: -surface;
+}
+
+/* ---------------------------------------------------------------- Stats (E128-E141) */
+
+.stats-scroll, .stats-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* E129: one tile per figure; the caption above, the number big. */
+.stat-tile, .stat-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -border;
+    -fx-border-radius: 12;
+    -fx-padding: 14 16 14 16;
+}
+
+/* E133: the Wishlist tile opens the Wishlist, so it answers the mouse. */
+.stat-tile.clickable:hover {
+    -fx-border-color: -accent;
+}
+
+.stat-value {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text;
+}
+
+.stat-caption {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.stat-link {
+    -fx-text-fill: -accent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+/* E140: the Books / Pages read switch shows which one the chart is drawing. */
+.stat-card .toggle-button.plain-button:selected {
+    -fx-background-color: -accent-soft;
+    -fx-text-fill: -accent;
+    -fx-border-color: -accent;
+}
+
+/* Modena draws charts for a white page: every text and line colour is
+   pointed at the theme's variables so they read in dark mode too. */
+.stat-chart {
+    -fx-padding: 4 0 0 0;
+}
+.stat-chart .chart-plot-background {
+    -fx-background-color: transparent;
+}
+.stat-chart .chart-horizontal-grid-lines {
+    -fx-stroke: -border;
+}
+.stat-chart .chart-horizontal-zero-line, .stat-chart .chart-vertical-zero-line {
+    -fx-stroke: -border;
+}
+.stat-chart .axis {
+    -fx-tick-label-fill: -text-muted;
+}
+.stat-chart .axis-tick-mark, .stat-chart .axis-minor-tick-mark {
+    -fx-stroke: -border;
+}
+.stat-chart .axis-label {
+    -fx-text-fill: -text-muted;
+}
+.stat-chart .default-color0.chart-bar {
+    -fx-bar-fill: -accent;
+    -fx-background-radius: 4 4 0 0;
+}
+.stat-chart .chart-pie-label {
+    -fx-fill: -text;
+}
+.stat-chart .chart-pie-label-line {
+    -fx-stroke: -text-muted;
+    -fx-fill: -text-muted;
+}
+/* E28 colours are set on each slice; this only draws the gap between slices. */
+.stat-chart .chart-pie {
+    -fx-border-color: -surface;
+    -fx-border-width: 2;
+}
+
+/* E141: the category table, styled like the other tables. */
+.tree-table-view.stat-table {
+    -fx-background-color: -surface;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 4;
+    -fx-fixed-cell-size: 30;
+}
+.stat-table .column-header-background, .stat-table .column-header, .stat-table .filler {
+    -fx-background-color: -surface;
+}
+.stat-table .column-header, .stat-table .filler {
+    -fx-border-color: transparent transparent -border transparent;
+    -fx-size: 32;
+}
+.stat-table .column-header .label {
+    -fx-text-fill: -text-muted;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-alignment: center-left;
+}
+.stat-table .tree-table-row-cell {
+    -fx-background-color: -surface;
+    -fx-table-cell-border-color: transparent;
+}
+.stat-table .tree-table-row-cell:odd {
+    -fx-background-color: -surface-2;
+}
+.stat-table .tree-table-row-cell:selected {
+    -fx-background-color: -accent-soft;
+}
+.stat-table .tree-table-cell {
+    -fx-text-fill: -text;
+    -fx-padding: 0 8 0 8;
+}
+.stat-table .tree-table-row-cell .arrow {
+    -fx-background-color: -text-muted;
+}
+
+/* ---------------------------------------------------------------- Refresh details (E142-E148) */
+
+.refresh-dialog .section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.dialog-pane.refresh-dialog > .content .section-label {
+    -fx-text-fill: -text-muted;
+}
+.refresh-tree {
+    -fx-background-color: -surface-2;
+    -fx-background-radius: 8;
+}
+.refresh-tree .tree-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text;
+}
+.refresh-tree .tree-cell:selected {
+    -fx-background-color: -accent-soft;
+}
+.refresh-tree .tree-cell .arrow {
+    -fx-background-color: -text-muted;
+}
+.dialog-pane.refresh-dialog .progress-bar > .bar {
+    -fx-background-color: -accent;
+}
