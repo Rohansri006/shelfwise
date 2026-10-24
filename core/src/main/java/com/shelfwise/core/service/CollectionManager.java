@@ -966,6 +966,12 @@ public class CollectionManager implements Searchable {
      * book added. Calling {@code Wishlist.markAsBought} and then
      * {@link #addItem} the other way round lost the entry whenever the book
      * turned out to be a duplicate.
+     * <p>
+     * E115: the new book's first copy starts with the expected price as its
+     * price paid. {@link Book#Book(WishlistEntry)} on its own carries no
+     * price, because a model object should not guess; here, at the moment
+     * of buying, the expected price is the best guess there is, and the
+     * screen opens the book for the user to correct it.
      *
      * @param wishlist a wishlist in this collection
      * @param entry    the entry that was bought; must be on that wishlist
@@ -991,6 +997,8 @@ public class CollectionManager implements Searchable {
                     existing.getIsbn(), existing.getId(), existing.getTitle());
         }
         Book book = wishlist.markAsBought(entry);
+        // 0 means "not recorded" on both sides, so an unknown price stays unknown.
+        book.getCopies().get(0).setPricePaid(entry.getExpectedPrice());
         addItem(book);
         return book;
     }

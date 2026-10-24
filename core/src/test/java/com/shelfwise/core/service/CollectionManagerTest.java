@@ -884,6 +884,23 @@ class CollectionManagerTest {
     }
 
     @Test
+    @DisplayName("a bought book's first copy starts with the entry's expected price as its price paid")
+    void markAsBoughtPrefillsPrice() throws Exception {
+        CollectionManager m = new CollectionManager();
+        Wishlist wishlist = new Wishlist("Birthday");
+        m.addWishlist(wishlist);
+        WishlistEntry priced = new WishlistEntry("Dune");
+        priced.setExpectedPrice(399);
+        WishlistEntry unpriced = new WishlistEntry("Emma");
+        wishlist.addEntry(priced);
+        wishlist.addEntry(unpriced);
+
+        assertEquals(399, m.markAsBought(wishlist, priced).getCopies().get(0).getPricePaid());
+        // No expected price: the copy's price stays "not recorded".
+        assertEquals(0, m.markAsBought(wishlist, unpriced).getCopies().get(0).getPricePaid());
+    }
+
+    @Test
     @DisplayName("a bought entry that duplicates a book already owned stays on the wishlist")
     void markAsBoughtDuplicateKeepsEntry() throws Exception {
         // The D35 bug: the entry used to be removed before the duplicate
