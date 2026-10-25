@@ -320,6 +320,8 @@ Each save **rewrites the whole collection** in one transaction: `setAutoCommit(f
 
 Backups are taken **once per launch**: the first save of a session copies the existing `shelfwise.db` into `backups/shelfwise-<yyyyMMdd-HHmmss>.db` *before* writing, then deletes the oldest while more than 5 exist. With autosave, a backup on every save would cover only the last five edits; once per launch covers the last five sessions. *(Changed 15 Oct from "on each successful save".)*
 
+**Restore** *(added 24 Oct, E46)*: `BackupManager.restore(backup, databaseFile)` first copies the chosen backup beside the database, then backs up the current database (so the restore can itself be undone), then moves the copy over `shelfwise.db` in one step. The screen closes nothing itself (storage opens a connection per operation) and reloads the collection afterwards.
+
 Conflict detection compares the database file's last-modified time against the value recorded at load; if it changed underneath us, `SyncConflictException` carries both timestamps and nothing is written. The UI offers **Keep mine** (overwrite, rebaseline) or **Keep theirs** (discard in-memory state, reload). No merge.
 
 ### 6.6 CSV — where the file-handling marks live
@@ -357,9 +359,14 @@ Defined in `schema.sql` so the UI reads real multi-table joins rather than assem
 | renaming a category/location/series/wishlist to a name taken among its siblings | `IllegalArgumentException` |
 | changing a book's ISBN to one another book has | `DuplicateItemException` |
 | marking a wishlist entry bought when its book is already owned | `DuplicateItemException`; entry kept |
+| adding a wishlist entry whose ISBN (either form) is already on that list *(E127, 24 Oct)* | `IllegalArgumentException`; an import skips it |
+| emptying a category/location into a target inside the subtree being emptied *(E101)* | `IllegalArgumentException` |
+| restoring a file that is not one of the backups folder's backups *(E46)* | `IllegalArgumentException` |
 | saving a collection that breaks any rule above (an edit bypassed the manager) | `IllegalStateException` listing every problem |
 
-**Collection-wide rules live in `CollectionManager`** *(added 18 Oct; D28–D35, ADR 0006)*. Model setters check only their own object, so edits that touch a collection-wide rule go through manager methods: `changeIsbn`, `renameCategory`, `renameLocation`, `renameSeries`, `renameWishlist`, `setLocation`, `fileUnder`, `setSeries`, `markAsBought`. `toCollectionData()`, where every save starts, runs `checkIntegrity()` first, so the database never sees a broken rule. ISBNs are stored as ISBN-13 and indexed in a `HashMap` for O(1) duplicate checks. Item lists and search results come back sorted by title, ignoring case. Text search also matches custom field values.
+**Collection-wide rules live in `CollectionManager`** *(added 18 Oct; D28–D35, ADR 0006)*. Model setters check only their own object, so edits that touch a collection-wide rule go through manager methods: `changeIsbn`, `renameCategory`, `renameLocation`, `renameSeries`, `renameWishlist`, `setLocation`, `fileUnder`, `setSeries`, `markAsBought`, `unfile`, `unshelve`. `toCollectionData()`, where every save starts, runs `checkIntegrity()` first, so the database never sees a broken rule. ISBNs are stored as ISBN-13 and indexed in a `HashMap` for O(1) duplicate checks. Item lists and search results come back sorted by title, ignoring case. Text search also matches custom field values.
+
+*(Added 24 Oct, E101/E115.)* **Deleting a node that still holds books** is two calls: `unfile(category, target)` / `unshelve(location, target)` first moves every filing or copy in the subtree, trashed books included, to `target` (the parent) or drops it when `target` is null; then `deleteCategory`/`deleteLocation` succeeds. Both return how many items/copies changed. **`markAsBought`** starts the new book's first copy at the entry's expected price (0 stays "not recorded"); `Book(WishlistEntry)` itself still carries no price.
 
 ISBN-10 checksum uses weights 10…1 mod 11 with `X` = 10; ISBN-13 uses alternating 1/3 weights mod 10. Both are written out as plain loops.
 

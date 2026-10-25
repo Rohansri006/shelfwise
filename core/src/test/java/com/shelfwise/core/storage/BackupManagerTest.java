@@ -61,6 +61,51 @@ class BackupManagerTest {
     }
 
     @Test
+    @DisplayName("restore puts a backup back as the database and backs up what was there first")
+    void restoreReplacesDatabase() throws IOException {
+        BackupManager backups = new BackupManager(backupFolder);
+        Path old = backups.backUp(databaseFile, LocalDateTime.of(2026, 10, 1, 9, 0, 0));
+        Files.write(databaseFile, "newer database".getBytes(StandardCharsets.UTF_8));
+
+        Path safety = backups.restore(old, databaseFile);
+
+        assertEquals("pretend database", new String(Files.readAllBytes(databaseFile), StandardCharsets.UTF_8));
+        assertEquals("newer database", new String(Files.readAllBytes(safety), StandardCharsets.UTF_8));
+        // No temporary file left beside the database.
+        assertEquals(2, backups.listBackups().size());
+        assertTrue(Files.notExists(folder.resolve("shelfwise.db.restoring")));
+    }
+
+    @Test
+    @DisplayName("restoring the oldest backup works even when the safety backup rotates it out")
+    void restoreOldestAtLimit() throws IOException {
+        BackupManager backups = new BackupManager(backupFolder, 2);
+        Path oldest = backups.backUp(databaseFile, LocalDateTime.of(2026, 10, 1, 9, 0, 0));
+        Files.write(databaseFile, "day two".getBytes(StandardCharsets.UTF_8));
+        backups.backUp(databaseFile, LocalDateTime.of(2026, 10, 2, 9, 0, 0));
+        Files.write(databaseFile, "today".getBytes(StandardCharsets.UTF_8));
+
+        backups.restore(oldest, databaseFile);
+
+        assertEquals("pretend database", new String(Files.readAllBytes(databaseFile), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("restoring a file that is not one of the backups is refused")
+    void restoreForeignFileRefused() throws IOException {
+        final BackupManager backups = new BackupManager(backupFolder);
+        final Path stray = folder.resolve("stray.db");
+        Files.write(stray, "not a backup".getBytes(StandardCharsets.UTF_8));
+        assertThrows(IllegalArgumentException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                backups.restore(stray, databaseFile);
+            }
+        });
+        assertEquals("pretend database", new String(Files.readAllBytes(databaseFile), StandardCharsets.UTF_8));
+    }
+
+    @Test
     @DisplayName("other files in the backups folder are never touched")
     void foreignFilesIgnored() throws IOException {
         Files.createDirectories(backupFolder);

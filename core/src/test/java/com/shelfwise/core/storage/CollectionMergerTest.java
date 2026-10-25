@@ -116,6 +116,29 @@ class CollectionMergerTest {
     }
 
     @Test
+    @DisplayName("an incoming wishlist entry whose ISBN is already on that list is skipped, not added twice")
+    void wishlistEntrySameIsbnSkipped() throws Exception {
+        CollectionManager source = new CollectionManager();
+        Wishlist incoming = new Wishlist("Birthday");
+        source.addWishlist(incoming);
+        WishlistEntry renamed = new WishlistEntry("Glimpses (paperback)");
+        renamed.setIsbn("0-14-303105-8");
+        incoming.addEntry(renamed);
+
+        CollectionManager target = new CollectionManager();
+        Wishlist mine = new Wishlist("Birthday");
+        target.addWishlist(mine);
+        WishlistEntry original = new WishlistEntry("Glimpses of World History");
+        original.setIsbn("9780143031055");
+        mine.addEntry(original);
+
+        ImportReport report = new CollectionMerger().merge(viaJson(source), target);
+
+        assertEquals(0, report.getWishlistEntriesAdded());
+        assertEquals(1, mine.getEntryCount());
+    }
+
+    @Test
     @DisplayName("a CSV export merged back into its own collection is recognised by id")
     void csvMergeTwiceIsHarmless() throws Exception {
         CollectionManager m = sampleCollection();

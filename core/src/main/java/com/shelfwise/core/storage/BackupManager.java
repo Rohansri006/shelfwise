@@ -127,6 +127,39 @@ public class BackupManager {
     }
 
     /**
+     * Puts a backup back as the database (E46). The current database is
+     * backed up first, so a restore can itself be undone by restoring that
+     * new backup.
+     * <p>
+     * The order matters. The chosen backup is first copied next to the
+     * database: taking the safety backup can rotate out the oldest backup,
+     * and if that was the one chosen it would otherwise be deleted before
+     * it was used. Only then is the copy moved over the database, in one
+     * step, so a failure part-way never leaves a half-written database.
+     * <p>
+     * Nothing may hold the database open while this runs; the caller
+     * reloads the collection from the file afterwards.
+     *
+     * @param backup       one of this folder's backups, from {@link #listBackups()}
+     * @param databaseFile the database file to replace
+     * @return the safety backup of the database as it was before
+     * @throws IOException              if a copy or the move fails
+     * @throws IllegalArgumentException if {@code backup} is not one of this
+     *                                  folder's backups
+     */
+    public Path restore(Path backup, Path databaseFile) throws IOException {
+        if (backup == null || !listBackups().contains(backup)) {
+            throw new IllegalArgumentException("Not one of the backups in " + backupFolder + ": " + backup);
+        }
+        Path incoming = databaseFile.resolveSibling(databaseFile.getFileName() + ".restoring");
+        Files.copy(backup, incoming, StandardCopyOption.REPLACE_EXISTING);
+        Path safety = backUp(databaseFile);
+        Files.move(incoming, databaseFile, StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE);
+        return safety;
+    }
+
+    /**
      * Deletes the oldest backups until only {@code keep} remain.
      *
      * @throws IOException if a file cannot be deleted

@@ -111,12 +111,15 @@ public class Wishlist {
      * Adds an entry to the end of the list.
      * <p>
      * Two entries with the same title are allowed - wanting both the
-     * hardback and a cheap paperback of one title is legitimate. Adding the
-     * same entry twice is not, because it would then appear twice on screen
-     * and be saved as two rows with one id.
+     * hardback and a cheap paperback of one title is legitimate, and they
+     * have different ISBNs. Adding the same entry twice is not, because it
+     * would then appear twice on screen and be saved as two rows with one
+     * id. Nor is a second entry with the same ISBN (E127): that is the same
+     * edition wanted twice, which is a mistake, not a wish.
      *
      * @param entry the entry; must not be null
-     * @throws IllegalArgumentException if null or already in this list
+     * @throws IllegalArgumentException if null, already in this list, or
+     *                                  its ISBN is already on this list
      */
     public void addEntry(WishlistEntry entry) {
         if (entry == null) {
@@ -126,6 +129,11 @@ public class Wishlist {
         if (entries.contains(entry)) {
             throw new IllegalArgumentException(
                     "\"" + entry.getTitle() + "\" is already on \"" + name + "\".");
+        }
+        WishlistEntry sameIsbn = findEntryByIsbn(entry.getIsbn());
+        if (sameIsbn != null) {
+            throw new IllegalArgumentException("\"" + entry.getTitle() + "\" has the same ISBN as \""
+                    + sameIsbn.getTitle() + "\", which is already on \"" + name + "\".");
         }
         entries.add(entry);
     }
@@ -138,6 +146,45 @@ public class Wishlist {
      */
     public boolean removeEntry(WishlistEntry entry) {
         return entries.remove(entry);
+    }
+
+    /**
+     * Finds the entry holding an ISBN, whichever way either was written:
+     * "0-14-303105-8" and "9780143031055" are the same book.
+     *
+     * @param isbn the ISBN to look for; null or blank finds nothing
+     * @return the matching entry, or null if there is none
+     */
+    public WishlistEntry findEntryByIsbn(String isbn) {
+        String wanted = isbnKey(isbn);
+        if (wanted == null) {
+            return null;
+        }
+        for (int i = 0; i < entries.size(); i++) {
+            if (wanted.equals(isbnKey(entries.get(i).getIsbn()))) {
+                return entries.get(i);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The form two ISBNs are compared in. Entries store their ISBN
+     * unchecked, so a valid one is turned into its ISBN-13 (making the ten-
+     * and thirteen-digit forms equal) and an invalid one is compared as
+     * written, without hyphens or spaces.
+     *
+     * @return the comparison key, or null when there is no ISBN
+     */
+    private static String isbnKey(String isbn) {
+        if (isbn == null || isbn.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return IsbnValidator.toIsbn13(isbn);
+        } catch (InvalidISBNException e) {
+            return IsbnValidator.normalise(isbn);
+        }
     }
 
     /**

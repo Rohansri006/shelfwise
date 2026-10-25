@@ -487,6 +487,63 @@ public class CollectionManager implements Searchable {
     }
 
     /**
+     * Empties a category's subtree so it can be deleted (E100/E101): every
+     * item filed anywhere in it is either filed under {@code target}
+     * instead ("move books to the parent") or loses those filings ("remove
+     * from books"). Items in the trash are changed too, because they would
+     * otherwise still block {@link #deleteCategory(Category)}.
+     * <p>
+     * The categories themselves are not deleted here; the screen calls
+     * {@code deleteCategory} next, which then succeeds.
+     *
+     * @param category an existing category; its sub-categories are included
+     * @param target   where the items go, or null to just remove the filings
+     * @return how many items changed
+     * @throws IllegalArgumentException if either category is unknown, or the
+     *                                  target is inside the subtree being
+     *                                  emptied (it is about to be deleted)
+     */
+    public int unfile(Category category, Category target) {
+        requireKnownCategory(category);
+        List<Category> subtree = category.getSubtree();
+        Set<String> ids = new HashSet<>();
+        for (int i = 0; i < subtree.size(); i++) {
+            ids.add(subtree.get(i).getId());
+        }
+        if (target != null) {
+            requireKnownCategory(target);
+            if (ids.contains(target.getId())) {
+                throw new IllegalArgumentException("\"" + target.getName()
+                        + "\" is inside \"" + category.getName() + "\", which is being emptied.");
+            }
+        }
+
+        int changed = 0;
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            CollectionItem item = all.get(i);
+            // A copy of the list: removing from the item's own list while
+            // walking it would skip entries.
+            List<String> filed = new ArrayList<>(item.getCategoryIds());
+            boolean hit = false;
+            for (int j = 0; j < filed.size(); j++) {
+                if (ids.contains(filed.get(j))) {
+                    item.removeCategoryId(filed.get(j));
+                    hit = true;
+                }
+            }
+            if (hit) {
+                // addCategoryId ignores a category the item already has.
+                if (target != null) {
+                    item.addCategoryId(target.getId());
+                }
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    /**
      * @param id the category's id
      * @return the category, or null if there is none
      */
@@ -658,6 +715,52 @@ public class CollectionManager implements Searchable {
         for (int i = 0; i < subtree.size(); i++) {
             locationsById.remove(subtree.get(i).getId());
         }
+    }
+
+    /**
+     * Empties a location's subtree so it can be deleted (E100/E101): every
+     * copy kept anywhere inside moves to {@code target}, or becomes
+     * unshelved (no location) when the target is null. Copies of trashed
+     * books are moved too, for the same reason as {@link #unfile}.
+     *
+     * @param location an existing location; everything inside it is included
+     * @param target   where the copies go, or null to unshelve them
+     * @return how many copies moved
+     * @throws IllegalArgumentException if either location is unknown, or the
+     *                                  target is inside the subtree being
+     *                                  emptied
+     */
+    public int unshelve(Location location, Location target) {
+        requireKnownLocation(location);
+        List<Location> subtree = location.getSubtree();
+        Set<String> ids = new HashSet<>();
+        for (int i = 0; i < subtree.size(); i++) {
+            ids.add(subtree.get(i).getId());
+        }
+        if (target != null) {
+            requireKnownLocation(target);
+            if (ids.contains(target.getId())) {
+                throw new IllegalArgumentException("\"" + target.getName()
+                        + "\" is inside \"" + location.getName() + "\", which is being emptied.");
+            }
+        }
+
+        int moved = 0;
+        List<CollectionItem> all = allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (!(all.get(i) instanceof Book)) {
+                continue;
+            }
+            List<Copy> copies = ((Book) all.get(i)).getCopies();
+            for (int j = 0; j < copies.size(); j++) {
+                String locationId = copies.get(j).getLocationId();
+                if (locationId != null && ids.contains(locationId)) {
+                    copies.get(j).setLocationId(target == null ? null : target.getId());
+                    moved++;
+                }
+            }
+        }
+        return moved;
     }
 
     /**
@@ -863,6 +966,12 @@ public class CollectionManager implements Searchable {
      * book added. Calling {@code Wishlist.markAsBought} and then
      * {@link #addItem} the other way round lost the entry whenever the book
      * turned out to be a duplicate.
+     * <p>
+     * E115: the new book's first copy starts with the expected price as its
+     * price paid. {@link Book#Book(WishlistEntry)} on its own carries no
+     * price, because a model object should not guess; here, at the moment
+     * of buying, the expected price is the best guess there is, and the
+     * screen opens the book for the user to correct it.
      *
      * @param wishlist a wishlist in this collection
      * @param entry    the entry that was bought; must be on that wishlist
@@ -888,6 +997,8 @@ public class CollectionManager implements Searchable {
                     existing.getIsbn(), existing.getId(), existing.getTitle());
         }
         Book book = wishlist.markAsBought(entry);
+        // 0 means "not recorded" on both sides, so an unknown price stays unknown.
+        book.getCopies().get(0).setPricePaid(entry.getExpectedPrice());
         addItem(book);
         return book;
     }

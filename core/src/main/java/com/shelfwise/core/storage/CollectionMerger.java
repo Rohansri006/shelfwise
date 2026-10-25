@@ -336,6 +336,11 @@ public class CollectionMerger {
      * @return true if the list already has it
      */
     private static boolean hasEntry(Wishlist wishlist, WishlistEntry entry) {
+        // E127: a list holds an ISBN once, so an entry with an ISBN already
+        // there counts as present even under another title.
+        if (wishlist.findEntryByIsbn(entry.getIsbn()) != null) {
+            return true;
+        }
         String isbn = isbnKey(entry.getIsbn());
         List<WishlistEntry> existing = wishlist.getEntries();
         for (int i = 0; i < existing.size(); i++) {
