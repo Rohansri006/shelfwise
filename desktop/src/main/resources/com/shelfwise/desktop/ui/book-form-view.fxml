@@ -11,6 +11,7 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
@@ -57,6 +58,11 @@
                     onAction="#onScan">
                 <graphic><FontIcon iconLiteral="mdi2b-barcode-scan" iconSize="16"/></graphic>
             </Button>
+            <!-- Like Bulk scan's: display only. Shown only while the camera is on. -->
+            <ToggleButton fx:id="mirrorToggle" text="Mirror" styleClass="plain-button" maxWidth="Infinity"
+                          selected="true" visible="false" managed="false" onAction="#onMirror">
+                <graphic><FontIcon iconLiteral="mdi2f-flip-horizontal" iconSize="16"/></graphic>
+            </ToggleButton>
             <Label fx:id="lookupStatus" styleClass="muted" wrapText="true"/>
         </VBox>
 

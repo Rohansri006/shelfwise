@@ -342,16 +342,6 @@ public class BulkScanController {
     }
 
     /**
-     * The Mirror toggle's setting, which the Single form's Scan follows too:
-     * one choice for the page, since the Single form has no room for its own.
-     *
-     * @return true if the preview is shown mirrored
-     */
-    boolean isMirrored() {
-        return mirrorToggle.isSelected();
-    }
-
-    /**
      * Display only: a negative horizontal scale flips the picture so moving
      * a book right moves it right on screen. The frames given to the decoder
      * are never flipped, so reading is unaffected.

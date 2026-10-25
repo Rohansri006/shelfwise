@@ -78,11 +78,6 @@ public class AddController extends PageController {
                 bulkController.rowEdited(draft, cover);
                 showBulk();
             }
-
-            @Override
-            public boolean mirrorCamera() {
-                return bulkController.isMirrored();
-            }
         });
         bulkController.setUp(shell, session, new BulkScanController.Host() {
             @Override

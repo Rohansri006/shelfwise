@@ -39,6 +39,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
@@ -100,9 +101,6 @@ public class BookFormController {
 
         /** QUEUE mode: Done pressed with a valid draft. */
         void queueDone(Book draft, Image cover);
-
-        /** E71: true if the Scan preview should be mirrored, as Bulk scan's Mirror toggle says. */
-        boolean mirrorCamera();
     }
 
     enum Mode { NEW, EDIT, QUEUE }
@@ -120,6 +118,7 @@ public class BookFormController {
     @FXML private TextField isbnField;
     @FXML private Button lookUpButton;
     @FXML private Button scanButton;
+    @FXML private ToggleButton mirrorToggle;
     @FXML private Label lookupStatus;
     @FXML private ScrollPane formScroll;
     @FXML private TextField titleField;
@@ -200,6 +199,9 @@ public class BookFormController {
 
     /** E71: the camera while Scan is on, else null. */
     private CameraFeed scanCamera;
+
+    /** The live picture while Scan is on, so Mirror can flip it; else null. */
+    private ImageView scanView;
 
     // ------------------------------------------------------------------
     // Setup
@@ -584,9 +586,9 @@ public class BookFormController {
         view.setFitWidth(180);
         view.setFitHeight(255);
         view.setPreserveRatio(true);
-        // Display only, like Bulk scan's Mirror toggle: the camera's frames
-        // go to the barcode reader unflipped, so reading is unaffected.
-        view.setScaleX(host.mirrorCamera() ? -1 : 1);
+        scanView = view;
+        applyMirror();
+        showMirrorToggle(true);
         Label hint = new Label("Opening the camera…");
         hint.getStyleClass().add("muted");
         hint.setWrapText(true);
@@ -647,8 +649,33 @@ public class BookFormController {
         }
         scanCamera.stop();
         scanCamera = null;
+        scanView = null;
+        showMirrorToggle(false);
         scanButton.setText("Scan");
         showCover();
+    }
+
+    @FXML
+    private void onMirror() {
+        applyMirror();
+    }
+
+    /**
+     * Display only, as in Bulk scan: a negative horizontal scale flips the
+     * picture so moving a book right moves it right on screen. The frames
+     * given to the barcode reader are never flipped, so reading is
+     * unaffected. The toggle keeps its setting between scans.
+     */
+    private void applyMirror() {
+        if (scanView != null) {
+            scanView.setScaleX(mirrorToggle.isSelected() ? -1 : 1);
+        }
+    }
+
+    /** Mirror is shown only while the camera is on: there is nothing to flip otherwise. */
+    private void showMirrorToggle(boolean shown) {
+        mirrorToggle.setVisible(shown);
+        mirrorToggle.setManaged(shown);
     }
 
     /**
