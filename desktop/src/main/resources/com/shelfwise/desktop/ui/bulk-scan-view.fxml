@@ -70,6 +70,11 @@
                     onAction="#onRemoveSelected">
                 <graphic><FontIcon iconLiteral="mdi2c-close" iconSize="16"/></graphic>
             </Button>
+            <!-- E127: the selected rows whose lookup finished go on a wishlist instead. -->
+            <Button fx:id="wishlistButton" text="Add to wishlist…" styleClass="plain-button"
+                    onAction="#onAddToWishlist">
+                <graphic><FontIcon iconLiteral="mdi2c-cart-plus" iconSize="16"/></graphic>
+            </Button>
             <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="confirmAll" text="Confirm all" styleClass="accent-button" onAction="#onConfirmAll">
                 <graphic><FontIcon iconLiteral="mdi2c-check-all" iconSize="16"/></graphic>

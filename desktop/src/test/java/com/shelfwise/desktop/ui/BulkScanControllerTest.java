@@ -69,4 +69,24 @@ class BulkScanControllerTest {
         // Nothing done means no toast at all.
         assertEquals("", BulkScanController.confirmMessage(0, 0, 0));
     }
+
+    @Test
+    @DisplayName("adding rows to a wishlist with none skipped gives no skip clause")
+    void wishlistMessageNoneSkipped() {
+        assertEquals("Added 3 to ‘To buy’", BulkScanController.wishlistMessage(3, "To buy", 0, 0, 0));
+    }
+
+    @Test
+    @DisplayName("skipped rows are counted and only the reasons that happened are named")
+    void wishlistMessageNamesReasons() {
+        assertEquals("Added 2 to ‘To buy’  ·  3 skipped (1 not ready, 2 owned)",
+                BulkScanController.wishlistMessage(2, "To buy", 1, 0, 2));
+    }
+
+    @Test
+    @DisplayName("when every row is skipped the message says nothing was added, and why")
+    void wishlistMessageNothingAdded() {
+        assertEquals("Nothing was added: 2 already on the list.",
+                BulkScanController.wishlistMessage(0, "To buy", 0, 2, 0));
+    }
 }

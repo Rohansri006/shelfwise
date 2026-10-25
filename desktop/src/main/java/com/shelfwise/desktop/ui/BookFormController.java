@@ -17,6 +17,8 @@ import com.shelfwise.core.model.Location;
 import com.shelfwise.core.model.ReadingSession;
 import com.shelfwise.core.model.ReadingStatus;
 import com.shelfwise.core.model.Series;
+import com.shelfwise.core.model.Wishlist;
+import com.shelfwise.core.model.WishlistEntry;
 import com.shelfwise.core.service.CollectionManager;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -142,6 +144,7 @@ public class BookFormController {
     @FXML private VBox fieldRows;
     @FXML private Button cancelButton;
     @FXML private Button saveAnotherButton;
+    @FXML private Button wishlistButton;
     @FXML private Button saveButton;
 
     private Shell shell;
@@ -367,6 +370,9 @@ public class BookFormController {
 
         saveAnotherButton.setVisible(mode == Mode.NEW);
         saveAnotherButton.setManaged(mode == Mode.NEW);
+        // E127: only a new book can go on a wishlist instead of the collection.
+        wishlistButton.setVisible(mode == Mode.NEW);
+        wishlistButton.setManaged(mode == Mode.NEW);
         saveButton.setText(mode == Mode.QUEUE ? "Done" : "Save");
         cancelButton.setText(mode == Mode.QUEUE ? "Back to queue" : "Cancel");
         formScroll.setVvalue(0);
@@ -1458,6 +1464,89 @@ public class BookFormController {
             problem(problems, field, "Price must be a number, got \"" + text + "\".");
             return -1;
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Add to wishlist (E127)
+    // ------------------------------------------------------------------
+
+    /**
+     * "Add to wishlist…": checks there is something to put on a list (a
+     * title or a valid ISBN), then drops the list picker below the button.
+     */
+    @FXML
+    private void onAddToWishlist() {
+        hideBanner();
+        clearErrors();
+        if (titleField.getText().trim().isEmpty() && isbnField.getText().trim().isEmpty()) {
+            markBad(titleField);
+            showBanner("error", "Give it a title or an ISBN first.");
+            return;
+        }
+        if (!isbnField.getText().trim().isEmpty() && WishlistPicker.isbn13OrNull(isbnField.getText()) == null) {
+            markBad(isbnField);
+            showBanner("error", "That ISBN isn't valid, so it can't go on a wishlist. Fix it or clear it.");
+            return;
+        }
+        WishlistPicker.show(wishlistButton, session, shell, new WishlistPicker.Chosen() {
+            @Override
+            public void chosen(Wishlist list) {
+                addToWishlist(list);
+            }
+        });
+    }
+
+    /**
+     * E127: puts what the form holds on a list - title (or the ISBN when
+     * there is none yet), ISBN, first author, and the first copy's price as
+     * the expected price - then clears the form for the next book. Refused
+     * if the ISBN is already on that list; asks first if the book is owned.
+     */
+    void addToWishlist(final Wishlist list) {
+        final String isbn13 = WishlistPicker.isbn13OrNull(isbnField.getText());
+        String title = titleField.getText().trim().isEmpty() ? isbnField.getText().trim() : titleField.getText().trim();
+        WishlistEntry same = list.findEntryByIsbn(isbn13);
+        if (same != null) {
+            markBad(isbnField);
+            showBanner("warn", "‘" + same.getTitle() + "’ is already on ‘" + list.getName() + "’.");
+            return;
+        }
+        Book owned = manager().findBookByIsbn(isbn13);
+        // Owned by the button just pressed: the fields sit in a ScrollPane,
+        // whose content is only in the window once it has been laid out.
+        if (owned != null && !WishlistPicker.ask(wishlistButton, "You already own ‘" + owned.getTitle() + "’"
+                + (owned.isDeleted() ? " (it is in the Trash)" : "") + ". Add it to ‘" + list.getName()
+                + "’ anyway?", "Add anyway", false)) {
+            return;
+        }
+        final WishlistEntry entry = new WishlistEntry(title);
+        entry.setIsbn(isbn13);
+        for (int i = 0; i < contributors.size(); i++) {
+            String name = contributors.get(i).name.getText().trim();
+            if (!name.isEmpty()) {
+                entry.setAuthor(name);
+                break;
+            }
+        }
+        if (!copies.isEmpty()) {
+            // A price that does not parse is simply not carried over.
+            List<String> ignored = new ArrayList<>();
+            double price = money(copies.get(0).price, ignored);
+            if (price > 0 && ignored.isEmpty()) {
+                entry.setExpectedPrice(price);
+            }
+        }
+        list.addEntry(entry);
+        shell.saveChanges();
+        openNew();
+        shell.toast("Added ‘" + entry.getTitle() + "’ to ‘" + list.getName() + "’", "Undo", new Runnable() {
+            @Override
+            public void run() {
+                list.removeEntry(entry);
+                // E153: Undo changes memory, then saves again.
+                shell.saveChanges();
+            }
+        });
     }
 
     // ------------------------------------------------------------------

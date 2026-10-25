@@ -46,12 +46,13 @@ final class WishlistPicker {
      * Shows the list picker below a button.
      *
      * @param anchor  the button that opened it
-     * @param manager the collection, whose wishlists are listed
+     * @param session the open collection, whose wishlists are listed
+     * @param shell   the window, to save a list made with "New wishlist…"
      * @param chosen  told which list was picked; not called on Esc
      */
-    static void show(final Node anchor, final CollectionManager manager, final Chosen chosen) {
+    static void show(final Node anchor, final Session session, final Shell shell, final Chosen chosen) {
         ContextMenu menu = new ContextMenu();
-        List<Wishlist> lists = manager.getWishlists();
+        List<Wishlist> lists = session.getManager().getWishlists();
         for (int i = 0; i < lists.size(); i++) {
             final Wishlist list = lists.get(i);
             MenuItem item = new MenuItem(list.getName() + " (" + list.getEntryCount() + ")");
@@ -70,8 +71,11 @@ final class WishlistPicker {
         create.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                Wishlist made = askForNewList(anchor, manager);
+                Wishlist made = askForNewList(anchor, session.getManager());
                 if (made != null) {
+                    // A new list is a change of its own (ADR 0001), saved even
+                    // if what was meant to go on it is then cancelled.
+                    shell.saveChanges();
                     chosen.chosen(made);
                 }
             }

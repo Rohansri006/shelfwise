@@ -151,6 +151,11 @@
     <HBox styleClass="form-actions" spacing="8" alignment="CENTER_RIGHT">
         <Button fx:id="cancelButton" text="Cancel" styleClass="plain-button" onAction="#onCancel"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <!-- E127: new books only; puts the form's book on a wishlist instead of the collection. -->
+        <Button fx:id="wishlistButton" text="Add to wishlist…" styleClass="plain-button"
+                onAction="#onAddToWishlist">
+            <graphic><FontIcon iconLiteral="mdi2c-cart-plus" iconSize="16"/></graphic>
+        </Button>
         <Button fx:id="saveAnotherButton" text="Save &amp; add another" styleClass="plain-button"
                 onAction="#onSaveAnother"/>
         <Button fx:id="saveButton" text="Save" styleClass="accent-button" onAction="#onSave">

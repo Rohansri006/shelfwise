@@ -10,6 +10,8 @@ import com.shelfwise.core.model.Contributor;
 import com.shelfwise.core.model.Copy;
 import com.shelfwise.core.model.IsbnValidator;
 import com.shelfwise.core.model.Location;
+import com.shelfwise.core.model.Wishlist;
+import com.shelfwise.core.model.WishlistEntry;
 import com.shelfwise.core.service.CollectionManager;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -146,6 +148,7 @@ public class BulkScanController {
     @FXML private TableView<Row> queue;
     @FXML private Label summary;
     @FXML private Button removeSelected;
+    @FXML private Button wishlistButton;
     @FXML private Button confirmAll;
 
     private Shell shell;
@@ -812,6 +815,136 @@ public class BulkScanController {
     }
 
     // ------------------------------------------------------------------
+    // Add to wishlist (E127)
+    // ------------------------------------------------------------------
+
+    @FXML
+    private void onAddToWishlist() {
+        WishlistPicker.show(wishlistButton, session, shell, new WishlistPicker.Chosen() {
+            @Override
+            public void chosen(Wishlist list) {
+                addRowsToWishlist(list);
+            }
+        });
+    }
+
+    /**
+     * E127: the selected rows whose lookup has finished - Ready, or known to
+     * be owned already - become entries on a list and leave the queue. Rows
+     * still looking up, not found or invalid stay, as do rows whose ISBN the
+     * list already has; the toast says how many and why. Owned books are
+     * asked about once for the whole batch.
+     */
+    void addRowsToWishlist(final Wishlist list) {
+        List<Row> picked = new ArrayList<>(queue.getSelectionModel().getSelectedItems());
+        List<Row> going = new ArrayList<>();
+        int notReady = 0;
+        int onList = 0;
+        int owned = 0;
+        for (int i = 0; i < picked.size(); i++) {
+            Row row = picked.get(i);
+            if (row.status != Status.READY && row.status != Status.DUPLICATE && row.status != Status.IN_TRASH) {
+                notReady++;
+            } else if (list.findEntryByIsbn(row.isbn) != null) {
+                onList++;
+            } else {
+                going.add(row);
+                if (row.status != Status.READY) {
+                    owned++;
+                }
+            }
+        }
+        int skippedOwned = 0;
+        if (owned > 0) {
+            String answer = WishlistPicker.choose(queue, "You already own "
+                    + (owned == 1 ? "1 of these" : owned + " of these") + ". Add "
+                    + (owned == 1 ? "it" : "them") + " to ‘" + list.getName() + "’ anyway?", false,
+                    "Skip owned", "Add all");
+            if (answer.equals("Cancel")) {
+                return;
+            }
+            if (answer.equals("Skip owned")) {
+                for (int i = going.size() - 1; i >= 0; i--) {
+                    if (going.get(i).status != Status.READY) {
+                        going.remove(i);
+                        skippedOwned++;
+                    }
+                }
+            }
+        }
+
+        // Positions first, before any row leaves, so Undo can put each back
+        // where it was: inserting in ascending order restores the original order.
+        final List<Row> moved = new ArrayList<>();
+        final List<Integer> positions = new ArrayList<>();
+        final List<WishlistEntry> entries = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            if (going.contains(rows.get(i))) {
+                moved.add(rows.get(i));
+                positions.add(i);
+            }
+        }
+        for (int i = 0; i < moved.size(); i++) {
+            Row row = moved.get(i);
+            Book book = row.draft != null ? row.draft : row.existing;
+            WishlistEntry entry = new WishlistEntry(book.getTitle());
+            entry.setIsbn(row.isbn);
+            Contributor author = book.getPrimaryAuthor();
+            if (author != null) {
+                entry.setAuthor(author.getName());
+            }
+            list.addEntry(entry);
+            entries.add(entry);
+        }
+        String message = wishlistMessage(moved.size(), list.getName(), notReady, onList, skippedOwned);
+        if (moved.isEmpty()) {
+            WishlistPicker.ask(queue, message, "OK", false);
+            return;
+        }
+        rows.removeAll(moved);
+        updateSummary();
+        shell.saveChanges();
+        shell.toast(message, "Undo", new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < entries.size(); i++) {
+                    list.removeEntry(entries.get(i));
+                }
+                for (int i = 0; i < moved.size(); i++) {
+                    rows.add(Math.min(positions.get(i), rows.size()), moved.get(i));
+                }
+                updateSummary();
+                // E153: Undo changes memory, then saves again.
+                shell.saveChanges();
+            }
+        });
+    }
+
+    /**
+     * E127: "Added 3 to ‘To buy’ · 2 skipped (1 not ready, 1 owned)", or
+     * "Nothing was added: …" when every row was skipped. Each reason is named
+     * only when it happened. Static, so it can be tested on its own.
+     */
+    static String wishlistMessage(int added, String listName, int notReady, int onList, int owned) {
+        List<String> why = new ArrayList<>();
+        if (notReady > 0) {
+            why.add(notReady + " not ready");
+        }
+        if (onList > 0) {
+            why.add(onList + " already on the list");
+        }
+        if (owned > 0) {
+            why.add(owned + " owned");
+        }
+        if (added == 0) {
+            return "Nothing was added: " + String.join(", ", why) + ".";
+        }
+        int skipped = notReady + onList + owned;
+        return "Added " + added + " to ‘" + listName + "’"
+                + (skipped == 0 ? "" : "  ·  " + skipped + " skipped (" + String.join(", ", why) + ")");
+    }
+
+    // ------------------------------------------------------------------
     // The queue table
     // ------------------------------------------------------------------
 
@@ -825,10 +958,13 @@ public class BulkScanController {
         // E86: several rows can be selected and removed together.
         queue.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         removeSelected.setDisable(true);
+        wishlistButton.setDisable(true);
         queue.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<Row>() {
             @Override
             public void onChanged(Change<? extends Row> change) {
-                removeSelected.setDisable(queue.getSelectionModel().getSelectedItems().isEmpty());
+                boolean none = queue.getSelectionModel().getSelectedItems().isEmpty();
+                removeSelected.setDisable(none);
+                wishlistButton.setDisable(none);
             }
         });
         // Delete or Backspace: Mac keyboards label Backspace "delete".
