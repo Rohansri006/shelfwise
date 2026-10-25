@@ -152,6 +152,7 @@ public class MainController implements Shell {
         loadPage(PageId.ADD, "add-view.fxml");
         loadPage(PageId.ORGANISE, "organise-view.fxml");
         loadPage(PageId.SETTINGS, "settings-view.fxml");
+        loadPage(PageId.TRASH, "trash-view.fxml");
         applyTheme(session.getSettings().getTheme() == Settings.Theme.DARK);
         updateCounts();
         show(PageId.BROWSE);
