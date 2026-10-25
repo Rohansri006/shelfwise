@@ -944,6 +944,48 @@
     -fx-font-size: 11px;
 }
 
+/* Every Alert and dialog. A dialog's window takes its owner's stylesheets, so
+   the theme's .label and .root colours reach it, but Modena still paints its
+   own light header, list and buttons: light text on light grey in the dark
+   theme. These rules repaint those parts from the theme variables, so both
+   themes read well. -fx-base is the colour Modena derives its buttons from;
+   a red danger button's inline -fx-base still wins over it. */
+.dialog-pane {
+    -fx-background-color: -surface;
+    -fx-base: -surface-2;
+}
+
+.dialog-pane > .header-panel {
+    -fx-background-color: -surface-2;
+}
+
+.dialog-pane > .header-panel .label,
+.dialog-pane > .content.label,
+.dialog-pane > .content .label {
+    -fx-text-fill: -text;
+}
+
+.dialog-pane > .button-bar > .container {
+    -fx-background-color: -surface;
+}
+
+/* The frame is an outer background layer, as Modena draws it, not a border:
+   a border would add to Modena's 1px padding and cut off the last row. */
+.dialog-pane .list-view {
+    -fx-background-color: -border, -surface-2;
+    -fx-background-insets: 0, 1;
+}
+
+.dialog-pane .list-cell {
+    -fx-background-color: -surface-2;
+    -fx-text-fill: -text;
+}
+
+.dialog-pane .list-cell:selected {
+    -fx-background-color: -accent-soft;
+    -fx-text-fill: -text;
+}
+
 /* The entry dialog takes the window's theme (its stylesheets are copied over). */
 .dialog-pane.add-page {
     -fx-background-color: -surface;
