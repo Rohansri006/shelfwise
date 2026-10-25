@@ -67,6 +67,17 @@ public abstract class PageController {
     }
 
     /**
+     * Called on every page when the theme changes, from the sidebar toggle
+     * or the Settings page (E108). Settings overrides it to keep its own
+     * Dark/Light switch in step; other pages restyle through CSS alone and
+     * inherit this empty default.
+     *
+     * @param dark true for the dark theme
+     */
+    public void themeChanged(boolean dark) {
+    }
+
+    /**
      * Called when another page replaces this one, after {@link #canLeave()}
      * agreed. A page holding something it must let go of - the Add page's
      * camera (E59) - releases it here. The default does nothing.

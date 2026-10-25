@@ -32,6 +32,14 @@ public interface Shell {
     boolean saveChanges();
 
     /**
+     * The whole collection was read again from its file (a restore, an
+     * import's Undo, "Keep theirs"): refreshes the sidebar's counts and
+     * shows the current page afresh, since it holds objects of the old
+     * collection.
+     */
+    void collectionReplaced();
+
+    /**
      * Switches to a page, as if its sidebar item were clicked.
      *
      * @return the page's controller, so the caller can tell it what to show

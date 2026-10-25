@@ -84,6 +84,7 @@ class OrganiseTreesTest {
             @Override public void toast(String message, String action, Runnable onAction,
                                         String action2, Runnable onAction2) { }
             @Override public boolean saveChanges() { return true; }
+            @Override public void collectionReplaced() { }
             @Override public PageController show(PageId page) { return null; }
             @Override public PageController show(PageId page, PageId lit) { return null; }
             @Override public Window getWindow() { return null; }

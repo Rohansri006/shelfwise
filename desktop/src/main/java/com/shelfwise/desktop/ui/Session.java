@@ -7,6 +7,7 @@ import com.shelfwise.core.metadata.MetadataLookup;
 import com.shelfwise.core.metadata.OpenLibraryProvider;
 import com.shelfwise.core.service.CollectionManager;
 import com.shelfwise.core.service.MetadataProvider;
+import com.shelfwise.core.storage.BackupManager;
 import com.shelfwise.core.storage.CollectionMerger;
 import com.shelfwise.core.storage.SampleCollection;
 import com.shelfwise.core.storage.Settings;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,6 +123,80 @@ public class Session {
     /** "Keep theirs" after a conflict, and after a restore: load the file again, dropping what is in memory. */
     public void reload() throws IOException {
         manager = new CollectionManager(storage.load());
+    }
+
+    // ------------------------------------------------------------------
+    // Backups (E46) and import Undo (E161)
+    // ------------------------------------------------------------------
+
+    /** @return the backups of this collection, oldest first */
+    public List<Path> listBackups() throws IOException {
+        return backups().listBackups();
+    }
+
+    /**
+     * "Back up now": copies the database into {@code backups/}. Autosave
+     * means the file already holds everything on screen.
+     *
+     * @return the new backup
+     */
+    public Path backUpNow() throws IOException {
+        return backups().backUp(storage.getDatabaseFile());
+    }
+
+    /**
+     * E46: replaces the collection with a backup. {@link BackupManager}
+     * backs up the current database first, so a restore can itself be
+     * undone from the backup list. The collection is then read from the
+     * file, like "Keep theirs", so screens must read the manager again.
+     *
+     * @param backup one of {@link #listBackups()}
+     * @throws IOException if a copy or the reload fails
+     */
+    public void restore(Path backup) throws IOException {
+        backups().restore(backup, storage.getDatabaseFile());
+        reload();
+    }
+
+    /**
+     * E161: keeps the database as it is just before an import, so the
+     * import can be undone. A copy of the file rather than of the objects:
+     * the merge changes existing categories and wishlists in place, so
+     * objects kept in memory would change too, but the file cannot. Autosave
+     * means the file holds exactly what is in memory at this moment. The
+     * copy is a memento (a saved state to go back to); it does not use one
+     * of the backup slots.
+     */
+    public void snapshotBeforeImport() throws IOException {
+        Files.copy(storage.getDatabaseFile(), beforeImport(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    /**
+     * E161/E162: puts back the database kept by {@link #snapshotBeforeImport()}
+     * and reloads it. Anything changed after the import is dropped too.
+     *
+     * @throws IOException if there is no snapshot, or the move or reload fails
+     */
+    public void undoImport() throws IOException {
+        if (!Files.exists(beforeImport())) {
+            throw new IOException("There is nothing to undo: the copy from before the import is gone.");
+        }
+        // One move, as BackupManager.restore does: a failure part-way never
+        // leaves a half-written database.
+        Files.move(beforeImport(), storage.getDatabaseFile(),
+                StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        reload();
+    }
+
+    /** @return the backup folder's manager, keeping the default 5 */
+    private BackupManager backups() {
+        return new BackupManager(getDataFolder().resolve(SqliteStorage.BACKUP_FOLDER));
+    }
+
+    /** @return where {@link #snapshotBeforeImport()} keeps its copy, beside the database */
+    private Path beforeImport() {
+        Path db = storage.getDatabaseFile();
+        return db.resolveSibling(db.getFileName() + ".before-import");
     }
 
     /**

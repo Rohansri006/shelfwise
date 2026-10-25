@@ -151,6 +151,7 @@ public class MainController implements Shell {
         loadPage(PageId.BROWSE, "browse-view.fxml");
         loadPage(PageId.ADD, "add-view.fxml");
         loadPage(PageId.ORGANISE, "organise-view.fxml");
+        loadPage(PageId.SETTINGS, "settings-view.fxml");
         applyTheme(session.getSettings().getTheme() == Settings.Theme.DARK);
         updateCounts();
         show(PageId.BROWSE);
@@ -362,6 +363,13 @@ public class MainController implements Shell {
         // The theme item is a ToggleButton only for its look; it is never "on".
         themeToggle.setSelected(false);
         themeIcon.setIconLiteral(dark ? "mdi2w-weather-night" : "mdi2w-white-balance-sunny");
+        // E108: tell every page; only Settings does anything with it (E163).
+        PageId[] ids = PageId.values();
+        for (int i = 0; i < ids.length; i++) {
+            if (pages.containsKey(ids[i])) {
+                pages.get(ids[i]).themeChanged(dark);
+            }
+        }
     }
 
     // ------------------------------------------------------------------
@@ -407,13 +415,19 @@ public class MainController implements Shell {
                 return true;
             }
             session.reload();
-            // The manager was replaced: the page must read the new one.
-            pages.get(current).shown();
+            collectionReplaced();
             toast("Loaded the collection from the file");
         } catch (SyncConflictException | IOException e) {
             error("The collection could not be saved", e.getMessage());
         }
         return false;
+    }
+
+    /** The manager was replaced: the counts and the page must read the new one. */
+    @Override
+    public void collectionReplaced() {
+        updateCounts();
+        pages.get(current).shown();
     }
 
     private void error(String header, String message) {
