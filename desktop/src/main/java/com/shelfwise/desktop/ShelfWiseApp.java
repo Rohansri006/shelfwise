@@ -153,6 +153,12 @@ public class ShelfWiseApp extends Application {
         Platform.exit();
     }
 
+    /**
+     * Starts JavaFX, which then calls {@link #start(Stage)} on the FX thread.
+     * Run {@link Launcher} instead from IntelliJ (see its comment).
+     *
+     * @param args command-line arguments, unused
+     */
     public static void main(String[] args) {
         launch(args);
     }

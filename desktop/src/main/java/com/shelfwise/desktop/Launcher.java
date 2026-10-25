@@ -9,6 +9,7 @@ package com.shelfwise.desktop;
  */
 public class Launcher {
 
+    /** @param args command-line arguments, passed on unchanged */
     public static void main(String[] args) {
         ShelfWiseApp.main(args);
     }

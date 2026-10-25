@@ -224,16 +224,19 @@ public class Session {
         settingsFile.save(settings);
     }
 
+    /** @return the settings read from settings.json; save changes with {@link #saveSettings()} */
     public Settings getSettings() {
         return settings;
     }
 
+    /**
+     * Every page edits the collection through this one manager, so the
+     * cross-object rules (ADR 0006) are checked in one place.
+     *
+     * @return the open collection's manager
+     */
     public CollectionManager getManager() {
         return manager;
-    }
-
-    public SqliteStorage getStorage() {
-        return storage;
     }
 
     /** @return the collection's folder, where the database, covers and backups live */

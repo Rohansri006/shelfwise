@@ -28,6 +28,12 @@ public class LockController {
     private Unlocked unlocked;
     private User user;
 
+    /**
+     * Shows the lock screen for a user.
+     *
+     * @param user     the Local user whose password unlocks the app
+     * @param unlocked told once the right password is entered
+     */
     public void open(User user, Unlocked unlocked) {
         this.user = user;
         this.unlocked = unlocked;
