@@ -1431,6 +1431,34 @@ public class BrowseController extends PageController {
         });
     }
 
+    // ------------------------------------------------------------------
+    // Refresh details (E142-E148)
+    // ------------------------------------------------------------------
+
+    /** Bulk bar: Refresh details for the picked books, every field "Fill if empty" (E146). */
+    @FXML
+    private void onBulkRefresh() {
+        refreshFlow().refreshMany(pickedInOrder(), BulkRefreshDialog.fillEmptyEverywhere(), redrawAfterRefresh());
+    }
+
+    /** A new one each time: it holds no state of its own, only the session and window. */
+    private RefreshFlow refreshFlow() {
+        return new RefreshFlow(session, shell);
+    }
+
+    /** After a refresh or its Undo: the grid/table, and the open book's details. */
+    private Runnable redrawAfterRefresh() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                refresh();
+                if (selected != null) {
+                    showDetail(selected);
+                }
+            }
+        };
+    }
+
     /** @return the picked books in display order, so actions run top to bottom */
     private List<Book> pickedInOrder() {
         List<Book> books = new ArrayList<>();
@@ -1649,9 +1677,20 @@ public class BrowseController extends PageController {
                 moveToTrash(one);
             }
         });
+        // E142: look the book up again and choose what to take (E145).
+        final Button again = new Button("Refresh details");
+        again.getStyleClass().add("plain-button");
+        again.setGraphic(new FontIcon("mdi2r-refresh"));
+        again.setMaxWidth(Double.MAX_VALUE);
+        again.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                refreshFlow().refreshOne(book, again, redrawAfterRefresh());
+            }
+        });
         Region gap = new Region();
         gap.setMinHeight(4);
-        detail.getChildren().addAll(gap, edit, trash);
+        detail.getChildren().addAll(gap, edit, again, trash);
 
         if (panelWidth(mainSplit, false) < SNAPPED_BELOW) {
             openDetail();

@@ -379,7 +379,18 @@ public class StatsController extends PageController {
             tile.getChildren().add(bookLink("Shortest: ", p.shortest));
         }
         if (p.unknown > 0) {
-            tile.getChildren().add(note("pages unknown for " + WishlistPicker.count(p.unknown, "book", "books")));
+            Label unknown = note("pages unknown for " + WishlistPicker.count(p.unknown, "book", "books"));
+            Hyperlink fill = new Hyperlink("Fill…");
+            fill.getStyleClass().add("stat-link");
+            fill.setOnAction(new EventHandler<ActionEvent>() {
+                @Override
+                public void handle(ActionEvent event) {
+                    fillPages(p.unknownBooks);
+                }
+            });
+            HBox line = new HBox(2, unknown, fill);
+            line.setAlignment(Pos.CENTER_LEFT);
+            tile.getChildren().add(line);
         }
         return tile;
     }
@@ -623,6 +634,19 @@ public class StatsController extends PageController {
         if (page instanceof BrowseController) {
             ((BrowseController) page).showOnly(status, category);
         }
+    }
+
+    /**
+     * E138: Refresh details for the books with no page count, preset to
+     * Pages only. After Apply or Undo the page counts again.
+     */
+    private void fillPages(List<Book> books) {
+        new RefreshFlow(session, shell).refreshMany(books, BulkRefreshDialog.pagesOnly(), new Runnable() {
+            @Override
+            public void run() {
+                shown();
+            }
+        });
     }
 
     /** E138: one book's details in Browse (longest / shortest). */

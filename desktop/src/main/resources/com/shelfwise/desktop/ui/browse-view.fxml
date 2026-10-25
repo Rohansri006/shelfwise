@@ -105,6 +105,10 @@
                 <graphic><FontIcon iconLiteral="mdi2t-tag-outline" iconSize="16"/></graphic>
             </Button>
             <MenuButton fx:id="bulkStatus" text="Set status" styleClass="plain-button"/>
+            <!-- E142/E146: look the picked books up again, choosing what to take. -->
+            <Button text="Refresh details…" styleClass="plain-button" onAction="#onBulkRefresh">
+                <graphic><FontIcon iconLiteral="mdi2r-refresh" iconSize="16"/></graphic>
+            </Button>
             <Button text="Move to Trash" styleClass="danger-button" onAction="#onBulkTrash">
                 <graphic><FontIcon iconLiteral="mdi2d-delete-outline" iconSize="16"/></graphic>
             </Button>

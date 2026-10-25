@@ -36,6 +36,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
@@ -59,7 +60,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -159,6 +162,12 @@ public class BookFormController {
     /** A cover picked or downloaded, written to {@code covers/} on Save. */
     private Image pendingCover;
     private boolean coverRemoved;
+
+    /** E114: true while the lookup started by {@link #openEditAndLookUp} runs. */
+    private boolean fillSilently;
+
+    /** E145: the open review, so moving on to another book can close it. */
+    private Dialog<ButtonType> review;
 
     /** The categories currently shown as chips. */
     private final List<Category> chosenCategories = new ArrayList<>();
@@ -300,6 +309,9 @@ public class BookFormController {
     void openEditAndLookUp(Book book) {
         open(Mode.EDIT, book);
         if (book.getIsbn() != null) {
+            // A just-bought book has nothing of the user's to protect yet,
+            // so this lookup fills the empty fields without a review (E114).
+            fillSilently = true;
             onLookUp();
         }
     }
@@ -328,6 +340,14 @@ public class BookFormController {
 
     private void open(Mode newMode, Book book) {
         opening++;
+        fillSilently = false;
+        // A review left open belongs to the book that was showing: closing
+        // it (no result, so nothing is applied) stops its values landing in
+        // the next book's form.
+        if (review != null && review.isShowing()) {
+            review.close();
+        }
+        review = null;
         stopScan();
         autoLookup.stop();
         lastLookedUp = null;
@@ -698,12 +718,20 @@ public class BookFormController {
 
     /**
      * Puts a lookup's answer into the form. A new book takes every field;
-     * an edited one only fills its empty fields (E35), so nothing the user
-     * typed is overwritten unasked.
+     * an edited one goes through the review instead (E145), where the user
+     * ticks what to take, so nothing they typed is overwritten unasked. A
+     * just-bought book (E114) only fills its empty fields.
      */
     private void applyLookup(Book found, Image cover, String from) {
         lookUpButton.setDisable(false);
         lookupStatus.setText(from);
+        if (mode == Mode.EDIT && !fillSilently) {
+            // E142/E145: an existing book gets the review, where the user
+            // chooses field by field, instead of the silent fill-empty (E35).
+            reviewLookup(new RefreshDetails.Found(found, cover, from));
+            return;
+        }
+        fillSilently = false;
         boolean all = mode != Mode.EDIT;
         fillText(titleField, found.getTitle(), all);
         fillText(subtitleField, found.getSubtitle(), all);
@@ -1463,6 +1491,124 @@ public class BookFormController {
         } catch (NumberFormatException e) {
             problem(problems, field, "Price must be a number, got \"" + text + "\".");
             return -1;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Refresh details in the Edit form (E145)
+    // ------------------------------------------------------------------
+
+    /**
+     * E145 in the Edit form: compares the found values with what the form
+     * shows now (not the saved book: the user may have typed since), and
+     * fills the ticked ones into the form. Nothing is saved until Save, so
+     * Cancel on the form still leaves the book as it was.
+     */
+    private void reviewLookup(RefreshDetails.Found found) {
+        Map<RefreshDetails.Field, String> yours = new EnumMap<>(RefreshDetails.Field.class);
+        yours.put(RefreshDetails.Field.TITLE, titleField.getText().trim());
+        yours.put(RefreshDetails.Field.SUBTITLE, subtitleField.getText().trim());
+        yours.put(RefreshDetails.Field.AUTHORS, formAuthors());
+        yours.put(RefreshDetails.Field.PUBLISHER, publisherField.getText().trim());
+        yours.put(RefreshDetails.Field.YEAR, yearField.getText().trim());
+        yours.put(RefreshDetails.Field.PAGES, pagesField.getText().trim());
+        yours.put(RefreshDetails.Field.LANGUAGE, languageField.getText().trim());
+        boolean hasCover = pendingCover != null || (!coverRemoved && RefreshDetails.hasCover(editing, dataFolder()));
+
+        List<RefreshDetails.Change> changes = RefreshDetails.diff(null, yours, hasCover, found, null);
+        if (changes.isEmpty()) {
+            showBanner("info", "Nothing new: " + found.source + " has the same details as the form.");
+            return;
+        }
+        Node thumb = null;
+        if (hasCover) {
+            thumb = pendingCover != null ? CoverArt.imageView(pendingCover, 60, 90)
+                    : CoverArt.coverFor(editing, dataFolder(), 60, 90, false);
+        }
+        final int asked = opening;
+        review = RefreshDialog.open(shell.getWindow(), titleField.getText().trim(), changes, thumb,
+                new RefreshDialog.Done() {
+                    @Override
+                    public void apply(List<RefreshDetails.Change> chosen) {
+                        // Only into the form the review was opened for.
+                        if (asked == opening) {
+                            fillChosen(chosen);
+                        }
+                    }
+                });
+    }
+
+    /** The authors in the form, as one line: the same form RefreshDetails compares. */
+    private String formAuthors() {
+        StringBuilder names = new StringBuilder();
+        for (int i = 0; i < contributors.size(); i++) {
+            String name = contributors.get(i).name.getText().trim();
+            if (contributors.get(i).role.getValue() == ContributorRole.AUTHOR && !name.isEmpty()) {
+                if (names.length() > 0) {
+                    names.append(", ");
+                }
+                names.append(name);
+            }
+        }
+        return names.toString();
+    }
+
+    /** Puts the ticked found values into the form's controls. */
+    private void fillChosen(List<RefreshDetails.Change> chosen) {
+        for (int i = 0; i < chosen.size(); i++) {
+            RefreshDetails.Change change = chosen.get(i);
+            switch (change.field) {
+                case TITLE:
+                    titleField.setText(change.theirs);
+                    break;
+                case SUBTITLE:
+                    subtitleField.setText(change.theirs);
+                    break;
+                case AUTHORS:
+                    replaceAuthorRows(change.found.book.getContributors());
+                    break;
+                case PUBLISHER:
+                    publisherField.setText(change.theirs);
+                    break;
+                case YEAR:
+                    yearField.setText(change.theirs);
+                    break;
+                case PAGES:
+                    pagesField.setText(change.theirs);
+                    break;
+                case LANGUAGE:
+                    languageField.setText(change.theirs);
+                    break;
+                default:
+                    // COVER: held until Save, like a cover picked by hand.
+                    pendingCover = change.found.cover;
+                    coverRemoved = false;
+                    showCover();
+                    break;
+            }
+        }
+        checkTitle();
+        showBanner("info", "Applied " + WishlistPicker.count(chosen.size(), "change", "changes")
+                + " to the form. Check them, then save.");
+    }
+
+    /** E144: the found authors first; rows in other roles (translator, editor) stay. */
+    private void replaceAuthorRows(List<Contributor> found) {
+        List<Contributor> others = new ArrayList<>();
+        for (int i = 0; i < contributors.size(); i++) {
+            ContributorRow row = contributors.get(i);
+            String name = row.name.getText().trim();
+            if (row.role.getValue() != ContributorRole.AUTHOR && !name.isEmpty()) {
+                others.add(new Contributor(name, row.role.getValue()));
+            }
+        }
+        contributors.clear();
+        contributorRows.getChildren().clear();
+        for (int i = 0; i < found.size(); i++) {
+            addContributorRow(found.get(i));
+        }
+        for (int i = 0; i < others.size(); i++) {
+            addContributorRow(others.get(i));
         }
     }
 
