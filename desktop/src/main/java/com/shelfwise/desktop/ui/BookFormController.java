@@ -100,6 +100,9 @@ public class BookFormController {
 
         /** QUEUE mode: Done pressed with a valid draft. */
         void queueDone(Book draft, Image cover);
+
+        /** E71: true if the Scan preview should be mirrored, as Bulk scan's Mirror toggle says. */
+        boolean mirrorCamera();
     }
 
     enum Mode { NEW, EDIT, QUEUE }
@@ -581,6 +584,9 @@ public class BookFormController {
         view.setFitWidth(180);
         view.setFitHeight(255);
         view.setPreserveRatio(true);
+        // Display only, like Bulk scan's Mirror toggle: the camera's frames
+        // go to the barcode reader unflipped, so reading is unaffected.
+        view.setScaleX(host.mirrorCamera() ? -1 : 1);
         Label hint = new Label("Opening the camera…");
         hint.getStyleClass().add("muted");
         hint.setWrapText(true);
