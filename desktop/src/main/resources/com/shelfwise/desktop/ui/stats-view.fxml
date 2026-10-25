@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Stats page (E48, E128-E141). Only the frame is here: the tiles, charts and
+     the category table are rebuilt by StatsController on every visit, from the
+     collection as it is now. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.StatsController"
+      fx:id="page" spacing="14" styleClass="stats-page">
+    <padding><Insets top="20" right="0" bottom="0" left="24"/></padding>
+
+    <HBox styleClass="toolbar-row" spacing="8">
+        <padding><Insets right="24"/></padding>
+        <Label text="Stats" styleClass="page-title"/>
+    </HBox>
+
+    <!-- E136: the page scrolls when the window is short. -->
+    <ScrollPane fx:id="scroll" fitToWidth="true" hbarPolicy="NEVER" styleClass="stats-scroll" VBox.vgrow="ALWAYS">
+        <VBox fx:id="content" spacing="18">
+            <padding><Insets right="24" bottom="24"/></padding>
+        </VBox>
+    </ScrollPane>
+</VBox>

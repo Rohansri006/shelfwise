@@ -341,6 +341,26 @@ public class BrowseController extends PageController {
         }
     }
 
+    /**
+     * E134/E141: Browse showing only one reading status or one category,
+     * for a click on a Stats chart. Every other filter is cleared first, so
+     * the count matches the figure the user clicked. Call it after showing
+     * Browse. Exactly one argument is non-null.
+     *
+     * @param status   the status to show, or null
+     * @param category the category to show (subtree included), or null
+     */
+    public void showOnly(ReadingStatus status, Category category) {
+        searchField.setText("");
+        categoryTree.getSelectionModel().clearSelection();
+        locationTree.getSelectionModel().clearSelection();
+        // Setting the box's value runs its listener, which sets the filter.
+        statusChoice.setValue(status == null ? ALL_STATUSES : status.getLabel());
+        if (category != null) {
+            selectInTree(categoryTree, category);
+        }
+    }
+
     /** Selects a node in one of the drawer's trees, if it is there. */
     private static <T> void selectInTree(TreeView<T> tree, T node) {
         TreeItem<T> item = findItem(tree.getRoot(), node);
