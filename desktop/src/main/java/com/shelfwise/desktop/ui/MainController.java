@@ -142,12 +142,7 @@ public class MainController implements Shell {
      */
     public void start(Session session) {
         this.session = session;
-        PageId[] ids = PageId.values();
-        for (int i = 0; i < ids.length; i++) {
-            ComingSoonPage page = new ComingSoonPage(ids[i]);
-            addPage(ids[i], page, page.getView());
-        }
-        // Each real page replaces its placeholder as it is ported (E152).
+        // One per PageId: show() hides every page but one, so none may be missing.
         loadPage(PageId.BROWSE, "browse-view.fxml");
         loadPage(PageId.ADD, "add-view.fxml");
         loadPage(PageId.ORGANISE, "organise-view.fxml");
@@ -182,17 +177,13 @@ public class MainController implements Shell {
      * @param id   the page
      * @param fxml the file, beside this class's FXML
      */
-    void loadPage(PageId id, String fxml) {
+    private void loadPage(PageId id, String fxml) {
         FXMLLoader loader = new FXMLLoader(MainController.class.getResource(fxml));
         Parent view;
         try {
             view = loader.load();
         } catch (IOException e) {
             throw new IllegalStateException("Could not load " + fxml + ": " + e.getMessage(), e);
-        }
-        // A page loaded again replaces the placeholder that held its place.
-        if (views.containsKey(id)) {
-            centre.getChildren().remove(views.get(id));
         }
         addPage(id, (PageController) loader.getController(), view);
     }
