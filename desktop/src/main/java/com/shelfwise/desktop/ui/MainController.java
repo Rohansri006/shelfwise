@@ -151,6 +151,7 @@ public class MainController implements Shell {
         loadPage(PageId.BROWSE, "browse-view.fxml");
         loadPage(PageId.ADD, "add-view.fxml");
         loadPage(PageId.ORGANISE, "organise-view.fxml");
+        loadPage(PageId.WISHLIST, "wishlist-view.fxml");
         loadPage(PageId.SETTINGS, "settings-view.fxml");
         loadPage(PageId.TRASH, "trash-view.fxml");
         applyTheme(session.getSettings().getTheme() == Settings.Theme.DARK);

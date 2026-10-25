@@ -37,6 +37,13 @@ public class AddController extends PageController {
     /** True while the form is showing a Bulk scan row (E37), so leaving it returns to the queue. */
     private boolean editingQueueRow = false;
 
+    /**
+     * E114: set while the form edits a book opened from the Wishlist page.
+     * Save, Cancel and Back then run this (back to the Wishlist) instead of
+     * going to Browse. Null otherwise.
+     */
+    private Runnable returnTo;
+
     @FXML
     private void initialize() {
         ToggleGroup modes = new ToggleGroup();
@@ -56,6 +63,9 @@ public class AddController extends PageController {
         formController.setUp(shell, session, new BookFormController.Host() {
             @Override
             public void saved(Book book, boolean addAnother) {
+                if (goBack()) {
+                    return;
+                }
                 if (addAnother) {
                     formController.openNew();
                 } else {
@@ -65,6 +75,9 @@ public class AddController extends PageController {
 
             @Override
             public void cancelled() {
+                if (goBack()) {
+                    return;
+                }
                 leaveForm();
             }
 
@@ -110,6 +123,8 @@ public class AddController extends PageController {
     /** E59: neither camera keeps running behind another page. */
     @Override
     public void hidden() {
+        // Left through the sidebar: the Wishlist's return (and its Undo toast) is dropped.
+        returnTo = null;
         formController.stopScan();
         bulkController.deactivate();
     }
@@ -142,14 +157,50 @@ public class AddController extends PageController {
      */
     public void openEdit(Book book) {
         editingQueueRow = false;
+        returnTo = null;
         formController.openEdit(book);
         showPane(false);
         pageTitle.setText("Edit book");
         modeSwitch.setVisible(false);
     }
 
+    /**
+     * E114/E116: Edit for a book just bought from the wishlist (or given a
+     * new copy), with the lookup filling the rest of its details. Save and
+     * Cancel come back through {@code back}, not to Browse. The Wishlist page
+     * shows this page first, then calls this.
+     *
+     * @param book the book to edit
+     * @param back what to do once the user saves or cancels
+     */
+    public void openEditReturning(Book book, Runnable back) {
+        editingQueueRow = false;
+        returnTo = back;
+        formController.openEditAndLookUp(book);
+        showPane(false);
+        pageTitle.setText("Edit bought book");
+        modeSwitch.setVisible(false);
+    }
+
+    /**
+     * If the form was opened from the Wishlist, goes back there.
+     *
+     * @return true if it did, so the caller does nothing more
+     */
+    private boolean goBack() {
+        if (returnTo == null) {
+            return false;
+        }
+        // Cleared first: going back hides this page, and hidden() clears it too.
+        Runnable back = returnTo;
+        returnTo = null;
+        back.run();
+        return true;
+    }
+
     private void openNew() {
         editingQueueRow = false;
+        returnTo = null;
         formController.openNew();
         showPane(false);
         pageTitle.setText("Add book");
@@ -163,6 +214,9 @@ public class AddController extends PageController {
             showBrowse(null);
         } else if (formController.confirmLeave()) {
             formController.stopScan();
+            if (goBack()) {
+                return;
+            }
             leaveForm();
         }
     }

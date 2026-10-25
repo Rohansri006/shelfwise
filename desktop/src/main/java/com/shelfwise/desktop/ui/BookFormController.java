@@ -290,6 +290,18 @@ public class BookFormController {
     }
 
     /**
+     * E114: a book just bought from the wishlist. It holds only the entry's
+     * title, ISBN and author, so the lookup runs at once to fill the rest;
+     * in Edit mode it fills only empty fields (E35).
+     */
+    void openEditAndLookUp(Book book) {
+        open(Mode.EDIT, book);
+        if (book.getIsbn() != null) {
+            onLookUp();
+        }
+    }
+
+    /**
      * E37: the form filled from a Bulk scan row's draft.
      *
      * @param draft the row's book, not in the collection
