@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Bulk scan (E36-E38, E59, E60, E67, E68, E70). Camera and paste box on the
+     left, the review queue on the right. -->
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<HBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.BulkScanController"
+      spacing="22">
+
+    <!-- ============================================ left: camera and paste box -->
+    <VBox spacing="10" minWidth="300" prefWidth="400" maxWidth="440">
+        <!-- E68: the frame's border flashes when a barcode is read. -->
+        <StackPane fx:id="previewFrame" styleClass="preview-frame" minHeight="240" minWidth="0">
+            <ImageView fx:id="preview" preserveRatio="true"/>
+            <!-- E38: shown instead of the picture when there is no camera. -->
+            <VBox fx:id="noCamera" styleClass="no-camera" spacing="10" alignment="CENTER" visible="false">
+                <FontIcon iconLiteral="mdi2c-camera-off" iconSize="36"/>
+                <Label fx:id="noCameraText" wrapText="true" textAlignment="CENTER"/>
+                <Button text="Retry" styleClass="plain-button" onAction="#onRetry"/>
+            </VBox>
+        </StackPane>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <ComboBox fx:id="cameraChoice" styleClass="combo" promptText="Camera" HBox.hgrow="ALWAYS"
+                      maxWidth="Infinity"/>
+            <ToggleButton fx:id="mirrorToggle" text="Mirror" styleClass="plain-button" selected="true"
+                          onAction="#onMirror">
+                <graphic><FontIcon iconLiteral="mdi2f-flip-horizontal" iconSize="16"/></graphic>
+            </ToggleButton>
+        </HBox>
+        <Label fx:id="cameraStatus" styleClass="muted" wrapText="true"/>
+
+        <Label text="PASTE ISBNS" styleClass="section-label"/>
+        <TextArea fx:id="pasteArea" prefRowCount="5" promptText="One ISBN per line - or type them in"/>
+        <Button text="Add to queue" styleClass="plain-button" onAction="#onPaste">
+            <graphic><FontIcon iconLiteral="mdi2t-tray-plus" iconSize="16"/></graphic>
+        </Button>
+    </VBox>
+
+    <!-- ============================================ right: batch defaults and queue -->
+    <VBox spacing="10" HBox.hgrow="ALWAYS">
+        <!-- E70: applied to every row on Confirm, except rows edited by hand. -->
+        <HBox styleClass="batch-row" spacing="8" alignment="CENTER_LEFT">
+            <Label text="For all:" styleClass="field-label"/>
+            <Button fx:id="batchLocation" styleClass="plain-button" onAction="#onBatchLocation">
+                <graphic><FontIcon iconLiteral="mdi2m-map-marker-outline" iconSize="16"/></graphic>
+            </Button>
+            <FlowPane fx:id="batchChips" hgap="6" vgap="6" HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <TableView fx:id="queue" styleClass="queue-table" VBox.vgrow="ALWAYS"/>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Label fx:id="summary" styleClass="bulk-count"/>
+            <!-- E86: also Delete / Backspace on the queue; asks first (E87). -->
+            <Button fx:id="removeSelected" text="Remove selected" styleClass="plain-button"
+                    onAction="#onRemoveSelected">
+                <graphic><FontIcon iconLiteral="mdi2c-close" iconSize="16"/></graphic>
+            </Button>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="confirmAll" text="Confirm all" styleClass="accent-button" onAction="#onConfirmAll">
+                <graphic><FontIcon iconLiteral="mdi2c-check-all" iconSize="16"/></graphic>
+            </Button>
+        </HBox>
+    </VBox>
+</HBox>

@@ -90,6 +90,9 @@ public class MainController implements Shell {
     private final Map<PageId, ToggleButton> navButtons = new EnumMap<>(PageId.class);
 
     private PageId current;
+
+    /** The sidebar item lit for the current page: usually the page itself (see {@link #show(PageId, PageId)}). */
+    private PageId litNow;
     private boolean collapsed = false;
     private boolean dark = true;
 
@@ -146,6 +149,7 @@ public class MainController implements Shell {
         }
         // Each real page replaces its placeholder as it is ported (E152).
         loadPage(PageId.BROWSE, "browse-view.fxml");
+        loadPage(PageId.ADD, "add-view.fxml");
         applyTheme(session.getSettings().getTheme() == Settings.Theme.DARK);
         updateCounts();
         show(PageId.BROWSE);
@@ -200,14 +204,31 @@ public class MainController implements Shell {
 
     @Override
     public PageController show(PageId id) {
+        return show(id, id);
+    }
+
+    /** The one real show method; {@link #show(PageId)} lights the page's own item. */
+    @Override
+    public PageController show(PageId id, PageId lit) {
         // E40: a page with unsaved changes may keep the user there.
         if (current != null && current != id && !pages.get(current).canLeave()) {
-            navButtons.get(current).setSelected(true);
+            navButtons.get(litNow).setSelected(true);
             return pages.get(current);
         }
+        if (current == id) {
+            // Already showing: shown() again would throw away what the page
+            // holds (a half-filled form), so only the lit item changes.
+            litNow = lit;
+            navButtons.get(lit).setSelected(true);
+            return pages.get(id);
+        }
+        if (current != null) {
+            pages.get(current).hidden();
+        }
         current = id;
+        litNow = lit;
         // A toggle group lets the user unselect the lit item; keep it lit.
-        navButtons.get(id).setSelected(true);
+        navButtons.get(lit).setSelected(true);
         PageId[] ids = PageId.values();
         for (int i = 0; i < ids.length; i++) {
             views.get(ids[i]).setVisible(ids[i] == id);

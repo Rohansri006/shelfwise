@@ -38,6 +38,17 @@ public interface Shell {
      */
     PageController show(PageId page);
 
+    /**
+     * Switches to a page but lights a different sidebar item. E33: "Edit
+     * book" opens the Add page's form while Browse stays lit, because the
+     * user is still working on a book from Browse.
+     *
+     * @param page the page to show
+     * @param lit  the sidebar item to light
+     * @return the page's controller
+     */
+    PageController show(PageId page, PageId lit);
+
     /** @return the window, as the owner for dialogs and file choosers */
     Window getWindow();
 

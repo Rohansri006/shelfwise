@@ -305,6 +305,23 @@ public class BrowseController extends PageController {
         }
     }
 
+    /**
+     * Opens one book's details, for pages that send the user here to see a
+     * book: the Add page after Save, Open or Restore. Call it after showing
+     * Browse, because {@link #shown()} closes the details panel.
+     *
+     * @param book the book to show; a trashed book is not shown, since
+     *             Browse lists only live books
+     */
+    public void showBook(Book book) {
+        if (book == null || book.isDeleted()) {
+            return;
+        }
+        showDetail(book);
+        // Again after the details are open, so the book is highlighted.
+        refresh();
+    }
+
     /** E39: Esc drops a bulk selection and closes the details panel. */
     @Override
     public boolean onEscape() {
@@ -1540,6 +1557,18 @@ public class BrowseController extends PageController {
             }
         }
 
+        Button edit = new Button("Edit book");
+        edit.getStyleClass().add("accent-button");
+        edit.setGraphic(new FontIcon("mdi2p-pencil"));
+        edit.setMaxWidth(Double.MAX_VALUE);
+        edit.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                // E33: the full form, with Browse still lit in the sidebar.
+                AddController add = (AddController) shell.show(PageId.ADD, PageId.BROWSE);
+                add.openEdit(book);
+            }
+        });
         // E73: one book to the Trash; undone from the toast (E74), so no confirm.
         Button trash = new Button("Move to Trash");
         trash.getStyleClass().add("danger-button");
@@ -1555,7 +1584,7 @@ public class BrowseController extends PageController {
         });
         Region gap = new Region();
         gap.setMinHeight(4);
-        detail.getChildren().addAll(gap, trash);
+        detail.getChildren().addAll(gap, edit, trash);
 
         if (panelWidth(mainSplit, false) < SNAPPED_BELOW) {
             openDetail();

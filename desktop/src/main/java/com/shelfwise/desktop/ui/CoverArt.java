@@ -2,6 +2,7 @@ package com.shelfwise.desktop.ui;
 
 import com.shelfwise.core.model.Book;
 import com.shelfwise.core.model.Contributor;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -31,6 +32,9 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -38,7 +42,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Book covers for Browse and the details panel.
+ * Book covers for Browse, the details panel and the Add page.
  * <p>
  * Priority (Q8, Q9): a cover the user uploaded, then one fetched by a
  * lookup, then a generated one. Generated covers imitate Calibre's: one of
@@ -214,6 +218,74 @@ final class CoverArt {
     /** @return true if a cover was removed */
     static boolean removeUpload(Book book, Path dataFolder) throws IOException {
         return Files.deleteIfExists(uploadedPath(book, dataFolder));
+    }
+
+    /**
+     * Saves a cover already on screen - one a lookup downloaded, or one
+     * picked in the Add form - as this book's cover file (E153: covers are
+     * real files in {@code covers/}, never kept only in memory).
+     *
+     * @throws IOException if the file cannot be written
+     */
+    static void saveCover(Book book, Path dataFolder, Image image) throws IOException {
+        // SwingFXUtils converts JavaFX's Image into the BufferedImage that
+        // Java's own image writer (ImageIO) works with.
+        saveImage(book, dataFolder, SwingFXUtils.fromFXImage(image, null));
+    }
+
+    // ------------------------------------------------------------------
+    // Downloads
+    // ------------------------------------------------------------------
+
+    /** Same limit as the metadata providers: a stalled server gives up after 5 s. */
+    private static final int DOWNLOAD_TIMEOUT_MS = 5000;
+
+    /**
+     * Downloads a lookup's cover. Blocks, so it is only ever called on a
+     * background thread.
+     * <p>
+     * Why not {@code new Image(url, false)}: in testing it came back empty
+     * for cover URLs that plain Java fetched fine, and it has no timeout, so
+     * one stalled server could hold up every lookup queued behind it. Here
+     * the connection has 5 s limits, Java's own {@link ImageIO} decodes the
+     * bytes, and {@link SwingFXUtils} converts the result for JavaFX.
+     *
+     * @param url the cover's address, or null
+     * @return the image, or null if there is no URL, it fails, or it is
+     *         Open Library's 1x1 pixel "no cover" answer
+     */
+    static Image download(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setConnectTimeout(DOWNLOAD_TIMEOUT_MS);
+            connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
+            // Same identification as the metadata providers; Open Library asks for one.
+            connection.setRequestProperty("User-Agent", "ShelfWise/1.0 (student project; personal book collection)");
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                return null;
+            }
+            BufferedImage picture;
+            try (InputStream in = connection.getInputStream()) {
+                picture = ImageIO.read(in);
+            }
+            // ImageIO.read answers null, not an exception, for bytes that are not an image.
+            // Anything under 10 px is a "no cover" placeholder, not a cover.
+            if (picture == null || picture.getWidth() < 10 || picture.getHeight() < 10) {
+                return null;
+            }
+            return SwingFXUtils.toFXImage(picture, null);
+        } catch (IOException | ClassCastException e) {
+            // Offline, timed out, or not an http(s) URL: no cover, never a crash.
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
     }
 
     // ------------------------------------------------------------------

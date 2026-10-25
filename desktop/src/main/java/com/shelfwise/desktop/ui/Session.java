@@ -1,7 +1,12 @@
 package com.shelfwise.desktop.ui;
 
 import com.shelfwise.core.exception.SyncConflictException;
+import com.shelfwise.core.metadata.GoogleBooksProvider;
+import com.shelfwise.core.metadata.MetadataCache;
+import com.shelfwise.core.metadata.MetadataLookup;
+import com.shelfwise.core.metadata.OpenLibraryProvider;
 import com.shelfwise.core.service.CollectionManager;
+import com.shelfwise.core.service.MetadataProvider;
 import com.shelfwise.core.storage.CollectionMerger;
 import com.shelfwise.core.storage.SampleCollection;
 import com.shelfwise.core.storage.Settings;
@@ -12,6 +17,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Everything one run of the app works on: the settings, the open
@@ -114,6 +121,26 @@ public class Session {
     /** "Keep theirs" after a conflict, and after a restore: load the file again, dropping what is in memory. */
     public void reload() throws IOException {
         manager = new CollectionManager(storage.load());
+    }
+
+    /**
+     * E55: the ISBN lookup - Open Library first, Google Books to fill the
+     * gaps - with answers cached in the collection's {@code cache/metadata}
+     * folder, so a book looked up once is found again offline.
+     * <p>
+     * A new one each time it is asked for: it is only a few small objects,
+     * and building it fresh means a Google key changed in Settings is used
+     * at once. With no key, Google is still asked, on the shared keyless
+     * quota, which can answer "too many requests"; that falls back cleanly.
+     *
+     * @return a lookup that reads the current settings
+     */
+    public MetadataLookup newLookup() {
+        List<MetadataProvider> sources = new ArrayList<>();
+        sources.add(new OpenLibraryProvider());
+        // A null or blank key makes the provider ask anonymously.
+        sources.add(new GoogleBooksProvider(settings.getGoogleApiKey()));
+        return new MetadataLookup(sources, new MetadataCache(getDataFolder().resolve("cache").resolve("metadata")));
     }
 
     /** Writes the settings file (theme, user, folder). */

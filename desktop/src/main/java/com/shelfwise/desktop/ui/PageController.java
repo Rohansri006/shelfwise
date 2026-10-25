@@ -65,4 +65,12 @@ public abstract class PageController {
     public boolean canLeave() {
         return true;
     }
+
+    /**
+     * Called when another page replaces this one, after {@link #canLeave()}
+     * agreed. A page holding something it must let go of - the Add page's
+     * camera (E59) - releases it here. The default does nothing.
+     */
+    public void hidden() {
+    }
 }
