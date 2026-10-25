@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Trash page (E42, E73-E81). A header with the search box and the three actions,
+     then one table of trashed books. The table's columns and its empty-state
+     placeholder are built by TrashController. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<!-- styleClass add-page: the same text-field look as the Add page. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.TrashController"
+      spacing="14" styleClass="add-page">
+    <padding><Insets top="20" right="24" bottom="16" left="24"/></padding>
+
+    <HBox styleClass="toolbar-row" spacing="8">
+        <Label text="Trash" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <!-- E77: the icon sits over the field's left padding, as in Browse. -->
+        <StackPane alignment="CENTER_LEFT">
+            <TextField fx:id="searchField" promptText="Search title, author, ISBN…" prefWidth="260"
+                       styleClass="search-field"/>
+            <FontIcon iconLiteral="mdi2m-magnify" iconSize="18" mouseTransparent="true" translateX="9"/>
+        </StackPane>
+        <Button fx:id="restoreButton" text="Restore" styleClass="accent-button" onAction="#onRestore">
+            <graphic><FontIcon iconLiteral="mdi2r-restore" iconSize="16"/></graphic>
+        </Button>
+        <Button fx:id="deleteButton" text="Delete permanently" styleClass="danger-button"
+                onAction="#onDeletePermanently">
+            <graphic><FontIcon iconLiteral="mdi2d-delete-forever-outline" iconSize="16"/></graphic>
+        </Button>
+        <Button fx:id="emptyButton" text="Empty Trash" styleClass="danger-button" onAction="#onEmptyTrash">
+            <graphic><FontIcon iconLiteral="mdi2d-delete-sweep-outline" iconSize="16"/></graphic>
+        </Button>
+    </HBox>
+
+    <Label fx:id="summary" styleClass="muted"/>
+    <TableView fx:id="table" styleClass="queue-table" VBox.vgrow="ALWAYS"/>
+</VBox>

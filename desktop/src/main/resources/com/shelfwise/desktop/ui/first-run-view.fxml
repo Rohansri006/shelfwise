@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The first-run page (E44, D22, E104). Covers the whole window, sidebar
+     included, on a fresh install. Three stacked steps: folder,
+     Guest or Local, sample books (only if the folder is empty). -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<StackPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.shelfwise.desktop.ui.FirstRunController"
+           styleClass="overlay, add-page">
+    <ScrollPane fitToWidth="true">
+        <HBox alignment="TOP_CENTER">
+            <VBox spacing="16" maxWidth="640" prefWidth="640">
+                <padding><Insets top="48" right="24" bottom="32" left="24"/></padding>
+
+                <Label text="Welcome to ShelfWise" styleClass="page-title"/>
+                <Label text="Three quick choices. You can change all of them later in Settings."
+                       styleClass="muted" wrapText="true"/>
+
+                <!-- Step 1: where the collection lives (D22). -->
+                <VBox styleClass="settings-card">
+                    <Label text="1   WHERE YOUR COLLECTION LIVES" styleClass="section-label"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <FontIcon iconLiteral="mdi2f-folder-outline" iconSize="18"/>
+                        <Label fx:id="folderLabel" HBox.hgrow="ALWAYS" maxWidth="Infinity" wrapText="true"/>
+                        <!-- minWidth -Infinity = USE_PREF_SIZE: the long path must not squeeze the button. -->
+                        <Button text="Change…" styleClass="plain-button" minWidth="-Infinity" onAction="#onChangeFolder"/>
+                    </HBox>
+                    <Label text="Your books, covers and backups are kept in this folder."
+                           styleClass="muted" wrapText="true"/>
+                </VBox>
+
+                <!-- Step 2: who uses it (E104). -->
+                <VBox styleClass="settings-card">
+                    <Label text="2   WHO USES IT" styleClass="section-label"/>
+                    <!-- Fixed height: wrapped text inside a button's graphic otherwise asks for far more. -->
+                    <HBox spacing="12">
+                        <ToggleButton fx:id="guestCard" styleClass="choice-card" HBox.hgrow="ALWAYS"
+                                      maxWidth="Infinity" prefHeight="122" maxHeight="-Infinity" onAction="#onGuest">
+                            <graphic>
+                                <VBox spacing="6">
+                                    <FontIcon iconLiteral="mdi2a-account-outline" iconSize="24"/>
+                                    <Label text="Guest" styleClass="card-title"/>
+                                    <Label text="No password. ShelfWise opens straight in."
+                                           styleClass="muted" wrapText="true" maxWidth="240" minHeight="-Infinity"/>
+                                </VBox>
+                            </graphic>
+                        </ToggleButton>
+                        <ToggleButton fx:id="localCard" styleClass="choice-card" HBox.hgrow="ALWAYS"
+                                      maxWidth="Infinity" prefHeight="122" maxHeight="-Infinity" onAction="#onLocal">
+                            <graphic>
+                                <VBox spacing="6">
+                                    <FontIcon iconLiteral="mdi2a-account-lock-outline" iconSize="24"/>
+                                    <Label text="Local user" styleClass="card-title"/>
+                                    <Label text="A name and a password, asked every time ShelfWise opens."
+                                           styleClass="muted" wrapText="true" maxWidth="240" minHeight="-Infinity"/>
+                                </VBox>
+                            </graphic>
+                        </ToggleButton>
+                    </HBox>
+                    <VBox fx:id="localFields" spacing="10" visible="false" managed="false">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Name" styleClass="setting-name"/>
+                            <TextField fx:id="nameField" prefWidth="260"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Password" styleClass="setting-name"/>
+                            <PasswordField fx:id="passwordField" prefWidth="260"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Repeat it" styleClass="setting-name"/>
+                            <PasswordField fx:id="repeatField" prefWidth="260"/>
+                        </HBox>
+                        <Label text="The password locks the app; it does not encrypt your files."
+                               styleClass="muted" wrapText="true"/>
+                    </VBox>
+                </VBox>
+
+                <!-- Step 3: only when the chosen folder is empty (D22). -->
+                <VBox fx:id="sampleStep" styleClass="settings-card">
+                    <Label text="3   START WITH SAMPLE BOOKS" styleClass="section-label"/>
+                    <CheckBox fx:id="sampleCheck" text="Add 25 well-known books to explore with" selected="true"/>
+                    <Label text="You can move them to the Trash at any time." styleClass="muted" wrapText="true"/>
+                </VBox>
+
+                <Label fx:id="errorLabel" styleClass="error-text" wrapText="true"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Button text="Quit" styleClass="plain-button" onAction="#onQuit"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="startButton" text="Start using ShelfWise" styleClass="accent-button"
+                            defaultButton="true" onAction="#onStart"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </ScrollPane>
+</StackPane>

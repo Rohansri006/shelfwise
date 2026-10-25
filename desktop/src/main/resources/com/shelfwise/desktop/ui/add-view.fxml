@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Add page (E32). A header with the Single / Bulk scan switch, then one of
+     two panes. Each pane is its own FXML file with its own controller, pulled in
+     by fx:include; JavaFX injects the included controllers into AddController as
+     formController and bulkController (the fx:id with "Controller" appended). -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.AddController"
+      spacing="14" styleClass="add-page">
+    <padding><Insets top="20" right="24" bottom="16" left="24"/></padding>
+
+    <HBox styleClass="toolbar-row">
+        <Button fx:id="backButton" styleClass="icon-button" onAction="#onBack">
+            <graphic><FontIcon iconLiteral="mdi2a-arrow-left" iconSize="20"/></graphic>
+        </Button>
+        <Label fx:id="pageTitle" text="Add book" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <HBox fx:id="modeSwitch" styleClass="segmented">
+            <ToggleButton fx:id="singleToggle" text="Single" styleClass="segment" onAction="#onSingle">
+                <graphic><FontIcon iconLiteral="mdi2b-book-plus" iconSize="16"/></graphic>
+            </ToggleButton>
+            <ToggleButton fx:id="bulkToggle" text="Bulk scan" styleClass="segment" onAction="#onBulk">
+                <graphic><FontIcon iconLiteral="mdi2b-barcode-scan" iconSize="16"/></graphic>
+            </ToggleButton>
+        </HBox>
+    </HBox>
+
+    <StackPane VBox.vgrow="ALWAYS">
+        <fx:include fx:id="form" source="book-form-view.fxml"/>
+        <fx:include fx:id="bulk" source="bulk-scan-view.fxml" visible="false"/>
+    </StackPane>
+</VBox>

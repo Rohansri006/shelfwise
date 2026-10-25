@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Settings page (E45, E107-E110, E159). One scrolling column of section cards.
+     The User card's contents change with the kind of user, so SettingsController
+     builds them in code. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<!-- styleClass add-page: the same text-field look as the Add page. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.SettingsController"
+      spacing="14" styleClass="add-page">
+    <padding><Insets top="20" right="24" bottom="16" left="24"/></padding>
+
+    <HBox styleClass="toolbar-row">
+        <Label text="Settings" styleClass="page-title"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox spacing="16" maxWidth="760">
+            <padding><Insets right="12" bottom="12"/></padding>
+
+            <!-- Collection -->
+            <VBox styleClass="settings-card">
+                <Label text="COLLECTION" styleClass="section-label"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Currency" styleClass="setting-name"/>
+                    <ComboBox fx:id="currencyChoice" styleClass="combo" prefWidth="280"/>
+                </HBox>
+                <Label text="Prices are shown in this currency. Changing it does not convert them."
+                       styleClass="muted" wrapText="true"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Data folder" styleClass="setting-name"/>
+                    <Label fx:id="dataFolderLabel" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button text="Open" styleClass="plain-button" minWidth="-Infinity" onAction="#onOpenFolder">
+                        <graphic><FontIcon iconLiteral="mdi2f-folder-open-outline" iconSize="16"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <!-- Data -->
+            <VBox styleClass="settings-card">
+                <Label text="DATA" styleClass="section-label"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Import" styleClass="setting-name"/>
+                    <Button text="CSV…" styleClass="plain-button" onAction="#onImportCsv">
+                        <graphic><FontIcon iconLiteral="mdi2f-file-import-outline" iconSize="16"/></graphic>
+                    </Button>
+                    <Button text="JSON…" styleClass="plain-button" onAction="#onImportJson">
+                        <graphic><FontIcon iconLiteral="mdi2f-file-import-outline" iconSize="16"/></graphic>
+                    </Button>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Export" styleClass="setting-name"/>
+                    <Button text="CSV…" styleClass="plain-button" onAction="#onExportCsv">
+                        <graphic><FontIcon iconLiteral="mdi2f-file-export-outline" iconSize="16"/></graphic>
+                    </Button>
+                    <Button text="JSON…" styleClass="plain-button" onAction="#onExportJson">
+                        <graphic><FontIcon iconLiteral="mdi2f-file-export-outline" iconSize="16"/></graphic>
+                    </Button>
+                </HBox>
+                <Label text="CSV holds your books, for spreadsheets. JSON holds everything: books, categories, locations, series and wishlists."
+                       styleClass="muted" wrapText="true"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Backups" styleClass="setting-name"/>
+                    <Button text="Back up now" styleClass="plain-button" onAction="#onBackUpNow">
+                        <graphic><FontIcon iconLiteral="mdi2c-content-save-outline" iconSize="16"/></graphic>
+                    </Button>
+                    <Button text="Restore from backup…" styleClass="plain-button" onAction="#onRestore">
+                        <graphic><FontIcon iconLiteral="mdi2b-backup-restore" iconSize="16"/></graphic>
+                    </Button>
+                </HBox>
+                <Label text="A backup is made automatically each time ShelfWise starts; the last 5 are kept."
+                       styleClass="muted" wrapText="true"/>
+            </VBox>
+
+            <!-- Book lookup (L7) -->
+            <VBox styleClass="settings-card">
+                <Label text="BOOK LOOKUP" styleClass="section-label"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Google Books key" styleClass="setting-name"/>
+                    <!-- E108: two fields over each other, one masked; Show swaps which is visible. -->
+                    <StackPane HBox.hgrow="ALWAYS">
+                        <PasswordField fx:id="keyHidden" promptText="Optional" onAction="#onSaveKey"/>
+                        <TextField fx:id="keyShown" promptText="Optional" visible="false" onAction="#onSaveKey"/>
+                    </StackPane>
+                    <ToggleButton fx:id="showKey" text="Show" styleClass="plain-button" onAction="#onShowKey"/>
+                    <!-- E159: saved only on Save or Enter; disabled until the key is edited. -->
+                    <Button fx:id="saveKey" text="Save" styleClass="accent-button" disable="true"
+                            onAction="#onSaveKey"/>
+                </HBox>
+                <Label text="Optional. Books are looked up on Open Library without a key; a Google Books key adds a second source when Open Library has no match."
+                       styleClass="muted" wrapText="true"/>
+            </VBox>
+
+            <!-- Appearance -->
+            <VBox styleClass="settings-card">
+                <Label text="APPEARANCE" styleClass="section-label"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Theme" styleClass="setting-name"/>
+                    <HBox styleClass="segmented">
+                        <ToggleButton fx:id="darkToggle" text="Dark" styleClass="segment" onAction="#onDark">
+                            <graphic><FontIcon iconLiteral="mdi2w-weather-night" iconSize="16"/></graphic>
+                        </ToggleButton>
+                        <ToggleButton fx:id="lightToggle" text="Light" styleClass="segment" onAction="#onLight">
+                            <graphic><FontIcon iconLiteral="mdi2w-white-balance-sunny" iconSize="16"/></graphic>
+                        </ToggleButton>
+                    </HBox>
+                </HBox>
+            </VBox>
+
+            <!-- User (E110): filled in by the controller. -->
+            <VBox fx:id="userCard" styleClass="settings-card"/>
+        </VBox>
+    </ScrollPane>
+</VBox>

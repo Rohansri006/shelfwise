@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Wishlist page (E43, E111-E126). The lists on the left (renamed and created
+     inline), the chosen list's entries on the right. The table's columns, the list cells
+     and the empty states are built by WishlistController. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<!-- styleClass add-page: the same text-field and red-border look as the Add page. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.WishlistController"
+      fx:id="page" spacing="14" styleClass="add-page">
+    <padding><Insets top="20" right="24" bottom="16" left="24"/></padding>
+
+    <HBox styleClass="toolbar-row" spacing="8">
+        <Label text="Wishlist" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="addEntryButton" text="Add entry" styleClass="accent-button" onAction="#onAddEntry">
+            <graphic><FontIcon iconLiteral="mdi2p-plus" iconSize="16"/></graphic>
+        </Button>
+        <Button fx:id="editButton" text="Edit" styleClass="plain-button" onAction="#onEdit">
+            <graphic><FontIcon iconLiteral="mdi2p-pencil-outline" iconSize="16"/></graphic>
+        </Button>
+        <Button fx:id="boughtButton" text="Mark as bought" styleClass="plain-button" onAction="#onMarkBought">
+            <graphic><FontIcon iconLiteral="mdi2c-cart-check" iconSize="16"/></graphic>
+        </Button>
+        <Button fx:id="removeButton" text="Remove" styleClass="danger-button" onAction="#onRemoveEntries">
+            <graphic><FontIcon iconLiteral="mdi2d-delete-outline" iconSize="16"/></graphic>
+        </Button>
+    </HBox>
+
+    <!-- E113/E116/E124: refusals and the "already own it" choices. -->
+    <HBox fx:id="banner" styleClass="banner" visible="false" managed="false">
+        <Label fx:id="bannerText" wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+        <HBox fx:id="bannerActions" spacing="6"/>
+    </HBox>
+
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <!-- ======================================== left: the lists -->
+        <VBox spacing="8" minWidth="200" prefWidth="230" maxWidth="260">
+            <Label text="LISTS" styleClass="section-label"/>
+            <ListView fx:id="lists" styleClass="wish-lists" VBox.vgrow="ALWAYS"/>
+            <HBox spacing="6">
+                <Button fx:id="newListButton" styleClass="plain-button" onAction="#onNewList">
+                    <graphic><FontIcon iconLiteral="mdi2p-playlist-plus" iconSize="16"/></graphic>
+                </Button>
+                <Button fx:id="renameListButton" styleClass="plain-button" onAction="#onRenameList">
+                    <graphic><FontIcon iconLiteral="mdi2f-form-textbox" iconSize="16"/></graphic>
+                </Button>
+                <Button fx:id="deleteListButton" styleClass="danger-button" onAction="#onDeleteList">
+                    <graphic><FontIcon iconLiteral="mdi2d-delete-outline" iconSize="16"/></graphic>
+                </Button>
+            </HBox>
+        </VBox>
+
+        <!-- ======================================== right: the entries -->
+        <VBox spacing="8" HBox.hgrow="ALWAYS">
+            <TableView fx:id="table" styleClass="wish-table" VBox.vgrow="ALWAYS"/>
+            <!-- E120: "3 entries · ₹15,898 total · 1 price unknown" -->
+            <Label fx:id="footer" styleClass="muted"/>
+        </VBox>
+    </HBox>
+</VBox>

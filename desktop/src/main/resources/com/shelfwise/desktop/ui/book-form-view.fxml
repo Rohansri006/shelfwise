@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Single add/edit form (E33-E35, E40, E61-E66, E71, E72). The rows inside
+     each sub-list are built by the controller, one per contributor, copy,
+     session or custom field. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.BookFormController"
+      spacing="12" styleClass="form-page">
+
+    <!-- E35/E63: one banner for duplicates, lookup results and validation. -->
+    <HBox fx:id="banner" styleClass="banner" visible="false" managed="false">
+        <!-- minHeight USE_PREF_SIZE: grow to fit every wrapped line instead of cutting to "..." -->
+        <Label fx:id="bannerText" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity" minHeight="-Infinity"/>
+        <HBox fx:id="bannerActions" spacing="6" alignment="CENTER_RIGHT"/>
+    </HBox>
+
+    <HBox spacing="28" VBox.vgrow="ALWAYS">
+        <!-- ============================================ left: cover and ISBN -->
+        <VBox spacing="10" minWidth="200" maxWidth="200">
+            <StackPane fx:id="coverSlot" prefWidth="180" prefHeight="255" maxWidth="180" maxHeight="255"/>
+            <HBox spacing="6">
+                <Button text="Change cover…" styleClass="plain-button" onAction="#onChangeCover">
+                    <graphic><FontIcon iconLiteral="mdi2i-image-edit-outline" iconSize="16"/></graphic>
+                </Button>
+                <Button fx:id="removeCover" styleClass="icon-button" onAction="#onRemoveCover">
+                    <graphic><FontIcon iconLiteral="mdi2i-image-remove" iconSize="16"/></graphic>
+                </Button>
+            </HBox>
+            <Region prefHeight="8"/>
+            <Label text="ISBN" styleClass="field-label"/>
+            <TextField fx:id="isbnField" promptText="10 or 13 digits" onAction="#onLookUp"/>
+            <!-- E72: Look up also runs by itself once a full ISBN is typed. E71: Scan swaps
+                 the cover for the live camera; the first ISBN read is looked up at once. -->
+            <Button fx:id="lookUpButton" text="Look up" styleClass="accent-button" maxWidth="Infinity"
+                    onAction="#onLookUp">
+                <graphic><FontIcon iconLiteral="mdi2c-cloud-search-outline" iconSize="16"/></graphic>
+            </Button>
+            <!-- Own row: "Cancel scan" beside Look up would not fit the 200 px column. -->
+            <Button fx:id="scanButton" text="Scan" styleClass="plain-button" maxWidth="Infinity"
+                    onAction="#onScan">
+                <graphic><FontIcon iconLiteral="mdi2b-barcode-scan" iconSize="16"/></graphic>
+            </Button>
+            <!-- Like Bulk scan's: display only. Shown only while the camera is on. -->
+            <ToggleButton fx:id="mirrorToggle" text="Mirror" styleClass="plain-button" maxWidth="Infinity"
+                          selected="true" visible="false" managed="false" onAction="#onMirror">
+                <graphic><FontIcon iconLiteral="mdi2f-flip-horizontal" iconSize="16"/></graphic>
+            </ToggleButton>
+            <Label fx:id="lookupStatus" styleClass="muted" wrapText="true"/>
+        </VBox>
+
+        <!-- ============================================ right: one scrolling page -->
+        <ScrollPane fx:id="formScroll" fitToWidth="true" hbarPolicy="NEVER" HBox.hgrow="ALWAYS"
+                    styleClass="form-scroll">
+            <VBox spacing="10" styleClass="form-sections">
+                <padding><Insets right="18" bottom="24"/></padding>
+
+                <Label text="DETAILS" styleClass="section-label"/>
+                <GridPane hgap="12" vgap="8">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="90"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                    <Label text="Title *" styleClass="field-label" GridPane.rowIndex="0"/>
+                    <TextField fx:id="titleField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    <HBox fx:id="titleHint" styleClass="hint" spacing="8" visible="false" managed="false"
+                          GridPane.columnIndex="1" GridPane.rowIndex="1">
+                        <Label fx:id="titleHintText" wrapText="true"/>
+                    </HBox>
+                    <Label text="Subtitle" styleClass="field-label" GridPane.rowIndex="2"/>
+                    <TextField fx:id="subtitleField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="Publisher" styleClass="field-label" GridPane.rowIndex="3"/>
+                    <TextField fx:id="publisherField" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <Label text="Year · pages" styleClass="field-label" GridPane.rowIndex="4"/>
+                    <HBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                        <TextField fx:id="yearField" promptText="Year" prefColumnCount="5"/>
+                        <TextField fx:id="pagesField" promptText="Pages" prefColumnCount="5"/>
+                        <TextField fx:id="languageField" promptText="Language" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <Label text="Series" styleClass="field-label" GridPane.rowIndex="5"/>
+                    <HBox spacing="8" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="5">
+                        <ComboBox fx:id="seriesChoice" styleClass="combo" prefWidth="260"/>
+                        <Label fx:id="positionLabel" text="#"/>
+                        <TextField fx:id="positionField" prefColumnCount="3"/>
+                    </HBox>
+                </GridPane>
+
+                <HBox styleClass="subsection-head">
+                    <Label text="Contributors" styleClass="field-label"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Add contributor" styleClass="link-button" onAction="#onAddContributor">
+                        <graphic><FontIcon iconLiteral="mdi2p-plus" iconSize="14"/></graphic>
+                    </Button>
+                </HBox>
+                <VBox fx:id="contributorRows" spacing="6"/>
+
+                <HBox styleClass="subsection-head">
+                    <Label text="COPIES" styleClass="section-label"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Add copy" styleClass="link-button" onAction="#onAddCopy">
+                        <graphic><FontIcon iconLiteral="mdi2p-plus" iconSize="14"/></graphic>
+                    </Button>
+                </HBox>
+                <VBox fx:id="copyRows" spacing="6"/>
+
+                <Label text="CATEGORIES" styleClass="section-label"/>
+                <FlowPane fx:id="categoryChips" hgap="6" vgap="6"/>
+
+                <Label text="READING" styleClass="section-label"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <ComboBox fx:id="statusChoice" styleClass="combo"/>
+                    <ComboBox fx:id="ratingChoice" styleClass="combo"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Start reading" styleClass="link-button" onAction="#onStartReading">
+                        <graphic><FontIcon iconLiteral="mdi2b-book-open-page-variant-outline" iconSize="14"/></graphic>
+                    </Button>
+                    <Button text="Add past session" styleClass="link-button" onAction="#onAddSession">
+                        <graphic><FontIcon iconLiteral="mdi2p-plus" iconSize="14"/></graphic>
+                    </Button>
+                </HBox>
+                <VBox fx:id="sessionRows" spacing="6"/>
+
+                <Label text="NOTES &amp; CUSTOM FIELDS" styleClass="section-label"/>
+                <TextArea fx:id="notesArea" prefRowCount="3" wrapText="true" promptText="Notes"/>
+                <VBox fx:id="fieldRows" spacing="6"/>
+                <Button text="Add field" styleClass="link-button" onAction="#onAddField">
+                    <graphic><FontIcon iconLiteral="mdi2p-plus" iconSize="14"/></graphic>
+                </Button>
+            </VBox>
+        </ScrollPane>
+    </HBox>
+
+    <!-- E64: the buttons shown depend on the mode (new / edit / queue row). -->
+    <HBox styleClass="form-actions" spacing="8" alignment="CENTER_RIGHT">
+        <Button fx:id="cancelButton" text="Cancel" styleClass="plain-button" onAction="#onCancel"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <!-- E127: new books only; puts the form's book on a wishlist instead of the collection. -->
+        <Button fx:id="wishlistButton" text="Add to wishlist…" styleClass="plain-button"
+                onAction="#onAddToWishlist">
+            <graphic><FontIcon iconLiteral="mdi2c-cart-plus" iconSize="16"/></graphic>
+        </Button>
+        <Button fx:id="saveAnotherButton" text="Save &amp; add another" styleClass="plain-button"
+                onAction="#onSaveAnother"/>
+        <Button fx:id="saveButton" text="Save" styleClass="accent-button" onAction="#onSave">
+            <graphic><FontIcon iconLiteral="mdi2c-check" iconSize="16"/></graphic>
+        </Button>
+    </HBox>
+</VBox>
