@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- The Organise page (E41, E89-E102). A header with the Categories / Locations
+     switch, then one tab at a time. Both tabs look the same (toolbar, banner, tree,
+     empty state), so OrganiseController builds them in code from one generic class,
+     TreeTab, rather than writing the same layout out twice here. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<!-- styleClass add-page: the same text-field and red-border look as the Add page. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.shelfwise.desktop.ui.OrganiseController"
+      spacing="14" styleClass="add-page">
+    <padding><Insets top="20" right="24" bottom="16" left="24"/></padding>
+
+    <HBox styleClass="toolbar-row">
+        <Label text="Organise" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <HBox styleClass="segmented">
+            <ToggleButton fx:id="categoriesToggle" text="Categories" styleClass="segment"
+                          onAction="#onCategories">
+                <graphic><FontIcon iconLiteral="mdi2t-tag-outline" iconSize="16"/></graphic>
+            </ToggleButton>
+            <ToggleButton fx:id="locationsToggle" text="Locations" styleClass="segment"
+                          onAction="#onLocations">
+                <graphic><FontIcon iconLiteral="mdi2b-bookshelf" iconSize="16"/></graphic>
+            </ToggleButton>
+        </HBox>
+    </HBox>
+
+    <StackPane fx:id="tabHolder" VBox.vgrow="ALWAYS"/>
+</VBox>

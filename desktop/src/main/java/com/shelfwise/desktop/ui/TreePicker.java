@@ -21,7 +21,9 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A popup holding a category or location tree, used wherever a screen needs
@@ -76,6 +78,14 @@ final class TreePicker<T> {
     private final TreeView<T> tree = new TreeView<>();
     private final TextField newName = new TextField();
     private final Label error = new Label();
+    /** The "+ New" field and button, hidden by {@link #hideNewRow}. */
+    private HBox newRow;
+
+    /**
+     * Nodes shown greyed out and refused when picked. A HashSet because the
+     * cell asks "is this one disabled?" for every visible row.
+     */
+    private final Set<T> disabled = new HashSet<>();
 
     /**
      * @param source    the tree's data
@@ -108,6 +118,23 @@ final class TreePicker<T> {
         error.setText("");
     }
 
+    /**
+     * E95: greys out nodes that cannot be picked - for "Move to…", the node
+     * being moved and everything beneath it, since a node cannot go inside
+     * itself.
+     *
+     * @param nodes the nodes to grey out
+     */
+    void disable(List<T> nodes) {
+        disabled.addAll(nodes);
+    }
+
+    /** E95: "Move to…" only picks among existing nodes, so it has no "+ New" row. */
+    void hideNewRow() {
+        newRow.setVisible(false);
+        newRow.setManaged(false);
+    }
+
     private void build() {
         tree.setShowRoot(false);
         tree.setRoot(new TreeItem<T>());
@@ -122,6 +149,8 @@ final class TreePicker<T> {
                     protected void updateItem(T item, boolean empty) {
                         super.updateItem(item, empty);
                         setText(empty || item == null ? null : source.name(item));
+                        // Disabled cells ignore the mouse and draw greyed out.
+                        setDisable(!empty && item != null && disabled.contains(item));
                     }
                 };
                 // One click only highlights (so "+ New" knows the parent);
@@ -187,13 +216,17 @@ final class TreePicker<T> {
             });
             content.getChildren().add(none);
         }
-        HBox newRow = new HBox(6, newName, add);
+        newRow = new HBox(6, newName, add);
         content.getChildren().addAll(tree, newRow, error, choose);
         popup.getContent().add(content);
         popup.setAutoHide(true);
     }
 
     private void pick(T node) {
+        // The keyboard can still highlight a greyed-out row, so check here too.
+        if (node != null && disabled.contains(node)) {
+            return;
+        }
         popup.hide();
         onChosen.chosen(node);
     }

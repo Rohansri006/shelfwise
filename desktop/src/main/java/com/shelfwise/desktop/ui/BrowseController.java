@@ -322,6 +322,53 @@ public class BrowseController extends PageController {
         refresh();
     }
 
+    /**
+     * E96: Browse showing only the books in one category or location,
+     * subtree included, for Organise's "Show in Browse". Call it after
+     * showing Browse, because {@link #shown()} clears the tree filters.
+     * Exactly one argument is non-null.
+     *
+     * @param category the category to filter to, or null
+     * @param location the location to filter to, or null
+     */
+    public void showFiltered(Category category, Location location) {
+        // Selecting the node in the drawer's tree sets the filter, through
+        // the same selection listener a click would.
+        if (category != null) {
+            selectInTree(categoryTree, category);
+        } else if (location != null) {
+            selectInTree(locationTree, location);
+        }
+    }
+
+    /** Selects a node in one of the drawer's trees, if it is there. */
+    private static <T> void selectInTree(TreeView<T> tree, T node) {
+        TreeItem<T> item = findItem(tree.getRoot(), node);
+        if (item != null) {
+            tree.getSelectionModel().select(item);
+        }
+    }
+
+    /**
+     * Depth-first search for the tree item holding a node. Recursion: each
+     * call looks through one level, then calls itself for the level below.
+     *
+     * @return the item, or null if the node is not in the tree
+     */
+    private static <T> TreeItem<T> findItem(TreeItem<T> parent, T node) {
+        for (int i = 0; i < parent.getChildren().size(); i++) {
+            TreeItem<T> child = parent.getChildren().get(i);
+            if (node.equals(child.getValue())) {
+                return child;
+            }
+            TreeItem<T> deeper = findItem(child, node);
+            if (deeper != null) {
+                return deeper;
+            }
+        }
+        return null;
+    }
+
     /** E39: Esc drops a bulk selection and closes the details panel. */
     @Override
     public boolean onEscape() {

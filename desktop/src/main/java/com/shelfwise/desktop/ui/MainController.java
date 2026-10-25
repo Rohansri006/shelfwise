@@ -150,6 +150,7 @@ public class MainController implements Shell {
         // Each real page replaces its placeholder as it is ported (E152).
         loadPage(PageId.BROWSE, "browse-view.fxml");
         loadPage(PageId.ADD, "add-view.fxml");
+        loadPage(PageId.ORGANISE, "organise-view.fxml");
         applyTheme(session.getSettings().getTheme() == Settings.Theme.DARK);
         updateCounts();
         show(PageId.BROWSE);
